@@ -3,16 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of all products.
      */
     public function index()
     {
+        $this->authorize('viewAny', Product::class);
         try {
             $products = Product::orderBy('created_at', 'desc')->paginate(10);
             return view('products.index', compact('products'));
@@ -27,6 +30,7 @@ class ProductController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', Product::class);
         return view('products.create');
     }
 
@@ -35,6 +39,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Product::class);
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
@@ -65,6 +70,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        $this->authorize('viewAny', Product::class);
         $invoices = \App\Models\Invoice::whereHas('items', function ($query) use ($product) {
             $query->where('product_id', $product->id);
         })->with('customer')->get();
@@ -88,6 +94,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        $this->authorize('update', $product);
         return view('products.edit', compact('product'));
     }
 
@@ -96,6 +103,7 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        $this->authorize('update', $product);
         $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
@@ -125,6 +133,7 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        $this->authorize('delete', $product);
         try {
             $product->delete();
             return back()->with('success', 'Product deleted successfully.');
@@ -139,6 +148,7 @@ class ProductController extends Controller
      */
     public function toggleStatus(Product $product)
     {
+        $this->authorize('toggleStatus', $product);
         try {
             $product->is_active = !$product->is_active;
             $product->save();

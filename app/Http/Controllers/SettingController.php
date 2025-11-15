@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Setting\UpdateIntegrationRequest;
+use App\Http\Requests\Setting\UpdateInvoiceRequest;
+use App\Http\Requests\Setting\UpdateOrganizationRequest;
+use App\Http\Requests\Setting\UpdatePasswordRequest;
 use App\Models\Setting;
 use App\Models\WebhookSetting;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
+    use AuthorizesRequests;
     public function index()
     {
+        $this->authorize('view', \App\Models\Setting::class);
         $setting = Setting::first();
 
         // Get webhook settings (or create a new instance if none exists)
@@ -21,20 +27,10 @@ class SettingController extends Controller
         return view('settings.index', compact('setting', 'webhookSetting'));
     }
 
-    public function updateOrganization(Request $request)
+    public function updateOrganization(UpdateOrganizationRequest  $request)
     {
-        $validated = $request->validate([
-            'company_name'     => 'required|string|max:255',
-            'tax_id'           => 'nullable|string|max:255',
-            'country'          => 'nullable|string|max:255',
-            'base_currency'    => 'nullable|string|max:10',
-            'address'          => 'nullable|string',
-            'invoice_notes'    => 'nullable|string',
-            'invoice_terms'    => 'nullable|string',
-            'contact_email'    => 'nullable|string',
-            'tax_percentage'   => 'nullable|numeric|min:0|max:100',
-            'logo_path'             => 'nullable|image|mimes:jpg,webp,jpeg,png,svg|max:2048',
-        ]);
+        $this->authorize('updateOrganization', \App\Models\Setting::class);
+        $validated = $request->validated();
 
         $setting = \App\Models\Setting::firstOrNew();
 
@@ -56,15 +52,10 @@ class SettingController extends Controller
         return back()->with('success', 'Organization settings updated successfully.');
     }
 
-    public function updateIntegration(Request $request)
+    public function updateIntegration(UpdateIntegrationRequest  $request)
     {
-        $validated = $request->validate([
-            'stripe_public_key' => 'nullable|string|max:255',
-            'stripe_secret_key' => 'nullable|string|max:255',
-            'webhook_url' => 'nullable|url',
-            'webhook_secret' => 'nullable|string|max:255',
-            'google_places_key' => 'nullable|string',
-        ]);
+        $this->authorize('updateIntegration', \App\Models\Setting::class);
+        $validated = $request->validated();
 
         $setting = Setting::firstOrNew();
         $setting->fill($validated)->save();
@@ -72,24 +63,11 @@ class SettingController extends Controller
         return back()->with('success', 'Integration settings updated successfully.');
     }
 
-    public function updateInvoice(Request $request)
+    public function updateInvoice(UpdateInvoiceRequest  $request)
     {
-        $validated = $request->validate([
-            'tax_id_invoice' => 'nullable|string|max:255',
-            'enable_tax_id' => 'nullable|boolean',
-            'enable_terms' => 'nullable|boolean',
-            'enable_invoice_notes' => 'nullable|boolean',
-            'enable_tax' => 'nullable|boolean',
-            'enable_due_date' => 'nullable|boolean',
-            'starting_invoice_number' => [
-                'required',
-                'string',
-                'regex:/^INV-\d{4}-\d{3,}$/', // e.g., INV-2025-001
-            ],
-        ], [
-            'starting_invoice_number.regex' => 'The starting invoice number must follow the format INV-YYYY-NNN (e.g., INV-2025-001).',
-        ]);
+        $this->authorize('updateInvoice', \App\Models\Setting::class);
 
+        $validated = $request->validated();
         $setting = Setting::firstOrNew();
 
         $setting->fill([
@@ -105,17 +83,13 @@ class SettingController extends Controller
         return back()->with('success', 'Invoice settings updated successfully.');
     }
 
-    public function updatePassword(Request $request)
+    public function updatePassword(UpdatePasswordRequest  $request)
     {
-        $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'new_password' => ['required', 'confirmed', 'min:8'],
-        ]);
+        $this->authorize('updatePassword', \App\Models\Setting::class);
 
         $user = Auth::user();
         $user->password = Hash::make($request->new_password);
         $user->save();
-
         return back()->with('success', 'Password updated successfully!');
     }
 }

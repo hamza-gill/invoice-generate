@@ -6,29 +6,27 @@ use App\Http\Requests\Invoice\StoreInvoiceRequest;
 use App\Mail\SendInvoiceMail;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\InvoiceMail;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Stripe\Stripe;
-use Stripe\Checkout\Session as StripeSession;
 use App\Jobs\SendInvoiceEmail;
 use Stripe\StripeClient;
 
 class InvoiceController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // Fetch invoices with related customer data and paginate (10 per page)
+        $this->authorize('view', Invoice::class);
+
         $invoices = Invoice::with('customer:id,name,company_name')->orderBy('id','desc')->paginate(10);
 
-        // Return view with paginated data
         return view('invoices.index', compact('invoices'));
     }
 
@@ -38,7 +36,7 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-
+        $this->authorize('create', Invoice::class);
         $customers = Customer::latest()->first();
         return view('invoices.create', compact('customers'));
     }
@@ -50,6 +48,7 @@ class InvoiceController extends Controller
 
     public function store(StoreInvoiceRequest $request)
     {
+        $this->authorize('create', Invoice::class);
         DB::beginTransaction();
 
         try {
@@ -146,6 +145,7 @@ class InvoiceController extends Controller
      */
     public function show(Invoice $invoice)
     {
+        $this->authorize('view', $invoice);
         $invoice->load(['customer', 'items', 'activities']);
 
         $invoice->subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->unit_price);
@@ -167,6 +167,8 @@ class InvoiceController extends Controller
     public function search(Request $request)
     {
         try {
+            $this->authorize('view', Invoice::class);
+
             $query = $request->input('query');
 
             $invoices = Invoice::with('customer')
@@ -219,6 +221,7 @@ class InvoiceController extends Controller
      */
     public function edit(Invoice $invoice)
     {
+        $this->authorize('update', $invoice);
         $customers = Customer::latest()->get();
         return view('invoices.edit', compact('customers','invoice'));
     }
@@ -228,6 +231,7 @@ class InvoiceController extends Controller
      */
     public function update(Request $request, Invoice $invoice)
     {
+        $this->authorize('update', $invoice);
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -328,6 +332,7 @@ class InvoiceController extends Controller
      */
     public function destroy(Invoice $invoice)
     {
+        $this->authorize('delete', $invoice);
         //
     }
 
@@ -337,7 +342,9 @@ class InvoiceController extends Controller
 
     public function downloadPdf(Invoice $invoice, Request $request)
     {
+        $this->authorize('download', $invoice);
         try {
+
             // Generate PDF from the invoice Blade view
             $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
             $invoice->logActivity(
@@ -374,7 +381,7 @@ class InvoiceController extends Controller
     public function sendInvoiceEmail($id)
     {
         $invoice = Invoice::with(['customer', 'items'])->findOrFail($id);
-
+        $this->authorize('send', $invoice);
         try {
             Mail::to($invoice->customer->email)->send(new SendInvoiceMail($invoice));
             $invoice->logActivity(
@@ -398,6 +405,7 @@ class InvoiceController extends Controller
      */
     public function void(Invoice $invoice)
     {
+        $this->authorize('void', $invoice);
         $invoice->status = 'void';
         $invoice->save();
 
@@ -415,7 +423,7 @@ class InvoiceController extends Controller
 
     public function reports(Request $request)
     {
-
+        $this->authorize('reports', Invoice::class);
         $query = Invoice::with('customer');
 
         if ($request->filled('start_date')) {

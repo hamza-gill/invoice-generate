@@ -7,12 +7,14 @@ use App\Http\Requests\ImportCustomersRequest;
 use App\Models\Customer;
 use App\Models\Product;
 use Exception;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Fetch products dynamically (AJAX) with optional search.
      *
@@ -23,6 +25,7 @@ class ProductController extends Controller
      */
     public function fetch(Request $request)
     {
+        $this->authorize('fetch', Product::class);
         try {
             $query = Product::query()->where('is_active', true);
 
@@ -64,6 +67,7 @@ class ProductController extends Controller
      */
     public function search(Request $request)
     {
+        $this->authorize('fetch', Product::class);
         try {
             $search = $request->get('search');
             $query = Product::query();
@@ -95,6 +99,7 @@ class ProductController extends Controller
 
      public function import(ImportCustomersRequest $request)
     {
+        $this->authorize('import', Product::class);
         try {
             // Ensure file exists and is readable
             if (!$request->hasFile('file')) {

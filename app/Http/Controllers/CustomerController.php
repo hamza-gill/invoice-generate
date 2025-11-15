@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ImportCustomersRequest;
 use App\Models\Customer;
 use Exception;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    use AuthorizesRequests;
     public function index()
     {
+        $this->authorize('viewAny', Customer::class);
         // This ensures $customers is a LengthAwarePaginator
         $customers = Customer::with('invoices')->latest()->paginate(10);
         return view('customers.index', compact('customers'));
@@ -22,17 +25,20 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
+        $this->authorize('view', $customer);
         $customer->load('invoices');
         return view('customers.show', compact('customer'));
     }
 
     public function create()
     {
+        $this->authorize('create', Customer::class);
         return view('customers.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Customer::class);
         // Validate incoming request
         $validatedData = $request->validate([
             'name'              => 'required|string|max:255',
@@ -72,6 +78,7 @@ class CustomerController extends Controller
 
     public function import(ImportCustomersRequest $request)
     {
+        $this->authorize('import', Customer::class);
         try {
             // Ensure file exists and is readable
             if (!$request->hasFile('file')) {
@@ -156,6 +163,7 @@ class CustomerController extends Controller
 
     public function search(Request $request)
     {
+        $this->authorize('search', Customer::class);
         try {
             $query = $request->input('query');
 
