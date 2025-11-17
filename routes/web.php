@@ -9,6 +9,7 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceResponseController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::get('list/fetching', [App\Http\Controllers\Ajax\CustomerController::class, 'fetch'])->name('customers.fetch');
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     });
+    Route::get('/search', [SearchController::class, 'globalSearch'])->name('search');
 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/invite', [UserController::class, 'invite'])->name('users.invite');

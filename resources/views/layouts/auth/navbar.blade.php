@@ -2,14 +2,17 @@
     <div class="flex items-center justify-between">
 
         <!-- 🔍 Search -->
-        <div class="flex-1 max-w-xl">
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input type="text"
-                       placeholder="Search invoices, payments, clients..."
-                       class="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        <div class="relative w-80">
+            <input type="text" id="globalSearch"
+                   placeholder="Search invoices, payments, clients..."
+                   class="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+
+            <!-- Autocomplete results -->
+            <div id="searchDropdown"
+                 class="hidden absolute left-0 right-0 mt-2 bg-white shadow-lg rounded-lg border z-50">
             </div>
         </div>
+
 
         <!-- 🔔 Notifications + Profile -->
         <div class="flex items-center space-x-6">
@@ -74,7 +77,7 @@
                                             @default bg-gray-100 text-gray-600
                                         @endswitch">
                                         {{ ucfirst($notification->status) }}
-                                    </span>
+                                        </span>
                                     @endif
                                 </div>
                                 <span class="text-[11px] text-gray-500 block mt-2">
@@ -107,7 +110,8 @@
         </div>
     </div>
 
-    <!-- JS for dropdown -->
+
+    <!-- Notification Dropdown JS -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const btn = document.getElementById('notificationBtn');
@@ -121,4 +125,51 @@
             document.addEventListener('click', () => dropdown.classList.add('hidden'));
         });
     </script>
+
+    <!-- 🔍 Global Search JS (FIXED) -->
+    <script>
+        const searchInput = document.getElementById('globalSearch');
+        const dropdown = document.getElementById('searchDropdown');
+        let timeout = null;
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timeout);
+
+            const q = this.value.trim();
+            if (!q) {
+                dropdown.classList.add('hidden');
+                dropdown.innerHTML = '';
+                return;
+            }
+
+            timeout = setTimeout(() => {
+                fetch(`/search?q=${encodeURIComponent(q)}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        const results = data.results || [];
+
+                        if (results.length === 0) {
+                            dropdown.innerHTML = `
+                                <div class="p-3 text-gray-500 text-sm">No results</div>
+                            `;
+                            dropdown.classList.remove("hidden");
+                            return;
+                        }
+
+                        dropdown.innerHTML = results.map(item => `
+                            <a href="${item.url}" class="block p-3 hover:bg-gray-100 border-b">
+                                <div class="text-sm font-semibold">${item.label}</div>
+                                <div class="text-xs text-gray-500">${item.type}</div>
+                            </a>
+                        `).join("");
+
+                        dropdown.classList.remove("hidden");
+                    });
+            }, 300);
+        });
+
+        document.addEventListener("click", () => dropdown.classList.add("hidden"));
+    </script>
+
 </header>
