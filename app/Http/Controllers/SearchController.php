@@ -15,7 +15,9 @@ class SearchController extends Controller
     public function globalSearch(Request $request)
     {
         try {
-            $query = $request->input('q');
+
+            $query = trim($request->input('q'));
+
             if (!$query) {
                 return response()->json([
                     'status' => 'success',
@@ -25,11 +27,15 @@ class SearchController extends Controller
 
             $likePattern = '%' . $query . '%';
 
-            // -------------------------
-            // Customer Search
-            // -------------------------
-            $customers = Customer::where('name', 'LIKE', $likePattern)
-                ->orWhere('email', 'LIKE', $likePattern)
+            /*
+            |--------------------------------------------------------------------------
+            | CUSTOMER SEARCH
+            |--------------------------------------------------------------------------
+            */
+            $customers = Customer::where(function ($q) use ($likePattern) {
+                $q->where('name', 'LIKE', $likePattern)
+                    ->orWhere('email', 'LIKE', $likePattern);
+            })
                 ->take(10)
                 ->get()
                 ->filter(function ($c) use ($query) {
@@ -37,20 +43,27 @@ class SearchController extends Controller
                         || FuzzySearch::isSimilar($c->email, $query)
                         || stripos($c->name, $query) !== false
                         || stripos($c->email, $query) !== false;
-                })->values()
+                })
+                ->values()
                 ->map(function ($c) {
                     return [
                         'type'  => 'customer',
-                        'label' => $c->name . ' (' . $c->email . ')',
-                        'url'   => route('customers.show', $c->id) // use $id instead of getKey()
+                        'label' => "{$c->name} ({$c->email})",
+                        'url'   => route('customers.show', $c->id)
                     ];
                 });
 
-            // -------------------------
-            // Invoice Search
-            // -------------------------
-            $invoices = Invoice::where('invoice_number', 'LIKE', $likePattern)
-                ->orWhere('description', 'LIKE', $likePattern)
+
+            /*
+            |--------------------------------------------------------------------------
+            | INVOICE SEARCH (Show invoice + customer info)
+            |--------------------------------------------------------------------------
+            */
+            $invoices = Invoice::with('customer')
+                ->where(function ($q) use ($likePattern) {
+                    $q->where('invoice_number', 'LIKE', $likePattern)
+                        ->orWhere('description', 'LIKE', $likePattern);
+                })
                 ->take(10)
                 ->get()
                 ->filter(function ($i) use ($query) {
@@ -58,20 +71,29 @@ class SearchController extends Controller
                         || FuzzySearch::isSimilar($i->description, $query)
                         || stripos($i->invoice_number, $query) !== false
                         || stripos($i->description, $query) !== false;
-                })->values()
+                })
+                ->values()
                 ->map(function ($i) {
+
+                    $customerName = $i->customer?->name ?? 'Unknown Customer';
+
                     return [
                         'type'  => 'invoice',
-                        'label' => $i->invoice_number,
+                        'label' => "Invoice #{$i->invoice_number} — {$customerName} — {$i->total_amount} USD",
                         'url'   => route('invoices.show', $i->id)
                     ];
                 });
 
-            // -------------------------
-            // Product Search
-            // -------------------------
-            $products = Product::where('name', 'LIKE', $likePattern)
-                ->orWhere('category', 'LIKE', $likePattern)
+
+            /*
+            |--------------------------------------------------------------------------
+            | PRODUCT SEARCH (Show name + category + price)
+            |--------------------------------------------------------------------------
+            */
+            $products = Product::where(function ($q) use ($likePattern) {
+                $q->where('name', 'LIKE', $likePattern)
+                    ->orWhere('category', 'LIKE', $likePattern);
+            })
                 ->take(10)
                 ->get()
                 ->filter(function ($p) use ($query) {
@@ -79,42 +101,44 @@ class SearchController extends Controller
                         || FuzzySearch::isSimilar($p->category, $query)
                         || stripos($p->name, $query) !== false
                         || stripos($p->category, $query) !== false;
-                })->values()
+                })
+                ->values()
                 ->map(function ($p) {
                     return [
                         'type'  => 'product',
-                        'label' => $p->name,
+                        'label' => "{$p->name} — {$p->category} — {$p->price} USD",
                         'url'   => route('products.show', $p->id)
                     ];
                 });
 
-            // -------------------------
-            // Merge all results
-            // -------------------------
-            // -------------------------
 
+            /*
+            |--------------------------------------------------------------------------
+            | SAFE MERGE OF NON-EMPTY COLLECTIONS
+            |--------------------------------------------------------------------------
+            */
             $collections = collect([$customers, $invoices, $products])
                 ->filter(fn($col) => $col && $col->isNotEmpty());
 
             $results = $collections->collapse()->values();
 
-            // Debug
-            // dd($customers, $invoices, $products, $results);
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'results' => $results
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Custom Search Error: ' . $e->getMessage(), [
+
+            Log::error('Search Error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Search failed. Please try again later.'
             ], 500);
         }
     }
+
 }

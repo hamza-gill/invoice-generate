@@ -342,7 +342,7 @@ class InvoiceController extends Controller
 
     public function downloadPdf(Invoice $invoice, Request $request)
     {
-        $this->authorize('download', $invoice);
+
         try {
 
             // Generate PDF from the invoice Blade view
@@ -398,6 +398,12 @@ class InvoiceController extends Controller
                 'message' => 'Failed to send invoice email: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+
+    public function public(Invoice $invoice)
+    {
+        return view('invoices.public', compact('invoice'));
     }
 
     /**

@@ -79,11 +79,11 @@
 
 {{-- Accept and Reject Buttons --}}
 <p style="text-align: center; margin: 30px 0;">
-    <a href="{{ route('invoice.respond', ['invoice' => $invoice->id, 'action' => 'accept']) }}"
+    <a href="{{ route('invoices.respond', ['invoice' => $invoice->id, 'action' => 'accept']) }}"
        style="background-color: #16A34A; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-right: 10px;">
         ✅ Accept
     </a>
-    <a href="{{ route('invoice.respond', ['invoice' => $invoice->id, 'action' => 'declined']) }}"
+    <a href="{{ route('invoices.respond', ['invoice' => $invoice->id, 'action' => 'declined']) }}"
        style="background-color: #DC2626; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
         ❌ Decline
     </a>

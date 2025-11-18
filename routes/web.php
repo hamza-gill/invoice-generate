@@ -20,17 +20,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/invoice/respond/{invoice}', [InvoiceResponseController::class, 'respond'])
-    ->name('invoice.respond');
 
-Route::get('/invoice/{invoice}/rejected', [InvoiceResponseController::class, 'rejected'])
-    ->name('invoices.rejected');
-
-Route::get('/invoice/{invoice}/success', [InvoiceResponseController::class, 'success'])
-    ->name('invoices.success');
-
-Route::get('/invoice/{invoice}/cancel', [InvoiceResponseController::class, 'cancel'])
-    ->name('invoices.cancel');
 
 Route::middleware('guest')->group(function () {
 
@@ -52,6 +42,20 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('submit.login');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
     Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        Route::get('/respond/{invoice}', [InvoiceResponseController::class, 'respond'])->name('respond');
+
+        Route::get('/{invoice}/rejected', [InvoiceResponseController::class, 'rejected'])->name('rejected');
+
+        Route::get('/{invoice}/success', [InvoiceResponseController::class, 'success'])->name('success');
+        Route::get('/{invoice}/public', [InvoiceController::class, 'public'])->name('public');
+
+        Route::get('/{invoice}/cancel', [InvoiceResponseController::class, 'cancel'])->name('cancel');
+        Route::get('/{invoice}/accept', [InvoiceResponseController::class, 'acceptPage'])->name('accept.page');
+        Route::post('/{invoice}/pay', [InvoiceResponseController::class, 'createPaymentSession'])->name('pay');
+        Route::get('/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('download');
+    });
 });
 
 /*
@@ -72,12 +76,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
         Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
-        Route::get('/{invoice}/download', [InvoiceController::class, 'downloadPdf'])->name('download');
+
         Route::get('/{id}/send', [InvoiceController::class, 'sendInvoiceEmail'])->name('sendEmail');       // Send email
         Route::post('/{invoice}/void', [InvoiceController::class, 'void'])->name('void');
-        Route::get('/{invoice}/accept', [InvoiceResponseController::class, 'acceptPage'])->name('accept.page');
-        Route::post('/{invoice}/pay', [InvoiceResponseController::class, 'createPaymentSession'])->name('pay');
-
     });
 
     Route::get('/reports', [InvoiceController::class, 'reports'])->name('reports');

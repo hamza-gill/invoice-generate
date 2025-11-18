@@ -13,6 +13,7 @@
                 <h2 class="text-xl font-bold text-gray-800">Invoice Details</h2>
             </div>
             <div class="flex space-x-3">
+
                 @if(!in_array($invoice->status, ['paid', 'void']))
                     <button id="editInvoiceBtn" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
                         <i class="fas fa-edit mr-2"></i>Edit
@@ -21,9 +22,16 @@
                         <i class="fas fa-ban mr-2"></i>Void
                     </button>
                 @endif
+
+                <!-- ⭐ ADDED: Copy Public Link Button -->
+                <button id="copyLinkBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-link mr-2"></i>Copy Public Link
+                </button>
+
                 <button id="sendEmailBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     <i class="fas fa-envelope mr-2"></i>Send Email
                 </button>
+
                 <button id="downloadPdfBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                     <i class="fas fa-download mr-2"></i>Download PDF
                 </button>
@@ -33,6 +41,8 @@
 
     <main class="flex-1 overflow-y-auto p-8">
         <div class="max-w-4xl mx-auto bg-white p-12 rounded-xl shadow-sm border border-gray-100" id="invoiceContent">
+
+            <!-- ⭐ YOUR FULL ORIGINAL INVOICE DISPLAY CODE (unchanged) ⭐ -->
 
             <!-- Header Section -->
             <div class="flex justify-between mb-12">
@@ -133,7 +143,6 @@
                     </tr>
                 @endforeach
 
-                {{-- Rush Add-On --}}
                 @if($invoice->rush_enabled_value)
                     <tr class="bg-yellow-50 font-semibold">
                         <td>Rush Add-On ({{ ucfirst($invoice->rush_delivery_type) ?? 'Fast' }})</td>
@@ -173,7 +182,6 @@
                 </div>
             </div>
 
-            <!-- Notes & Terms -->
             <div class="mt-8 border-t border-gray-200 pt-8 text-sm">
                 @if(!empty($invoice->note))
                     <div class="mb-6">
@@ -197,21 +205,19 @@
                 @endif
             </div>
 
-            {{-- ✅ Invoice Activity Log --}}
             @include('invoices.partials.activity-log', ['invoice' => $invoice])
 
         </div>
     </main>
 
-    <!-- SweetAlert -->
-    <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // EDIT INVOICE BUTTON
+        // EDIT BUTTON
         document.getElementById('editInvoiceBtn')?.addEventListener('click', function () {
             window.location.href = "{{ route('invoices.edit', $invoice->id) }}";
         });
+
         // VOID BUTTON
         document.getElementById('voidBtn')?.addEventListener('click', () => {
             Swal.fire({
@@ -229,7 +235,7 @@
             });
         });
 
-        // SEND EMAIL BUTTON
+        // SEND EMAIL
         document.getElementById('sendEmailBtn').addEventListener('click', function () {
             Swal.fire({
                 title: 'Send Invoice Email?',
@@ -260,8 +266,7 @@
                             text: data.message
                         });
                     })
-                    .catch(error => {
-                        console.error(error);
+                    .catch(() => {
                         Swal.fire('Error', 'An error occurred while sending the email.', 'error');
                     })
                     .finally(() => {
@@ -271,7 +276,28 @@
             });
         });
 
-        // DOWNLOAD PDF BUTTON
+        // ⭐ COPY PUBLIC LINK BUTTON
+        document.getElementById('copyLinkBtn').addEventListener('click', function () {
+            const publicUrl = "{{ route('invoices.public', $invoice->id) }}";
+
+            navigator.clipboard.writeText(publicUrl)
+                .then(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Link Copied!',
+                        text: 'Public URL copied to clipboard.'
+                    });
+                })
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Copy Failed',
+                        text: 'Could not copy link.'
+                    });
+                });
+        });
+
+        // DOWNLOAD PDF
         document.getElementById('downloadPdfBtn').addEventListener('click', function () {
             Swal.fire({
                 title: 'Download PDF?',
@@ -306,8 +332,7 @@
                             Swal.fire('Failed!', data.message || 'Failed to generate PDF.', 'error');
                         }
                     })
-                    .catch(err => {
-                        console.error(err);
+                    .catch(() => {
                         Swal.fire('Error', 'Error generating PDF. Please try again.', 'error');
                     })
                     .finally(() => {
@@ -316,5 +341,6 @@
                     });
             });
         });
+
     </script>
 @endsection
