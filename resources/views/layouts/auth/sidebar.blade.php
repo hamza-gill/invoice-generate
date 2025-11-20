@@ -14,7 +14,7 @@
 
     <!-- 📋 Navigation Menu -->
     <nav class="flex-1 px-3 py-6 space-y-1">
-        <!-- Dashboard -->
+        <!-- Dashboard - Available to all authenticated users -->
         <a href="{{ route('dashboard') }}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
                   {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
@@ -22,47 +22,57 @@
             <span class="font-medium">Dashboard</span>
         </a>
 
-        <!-- Invoices -->
-        <a href="{{ route('invoices.index') }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('invoices.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-file-invoice w-5"></i>
-            <span>Invoices</span>
-        </a>
+        <!-- Invoices - Admin, Developer, Manager, Employee -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
+            <a href="{{ route('invoices.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('invoices.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-file-invoice w-5"></i>
+                <span>Invoices</span>
+            </a>
+        @endif
 
-        <!-- Customers -->
-        <a href="{{ route('customers.index') }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('customers.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-user w-5"></i>
-            <span>Customers</span>
-        </a>
+        <!-- Customers - Admin, Developer, Manager, Employee -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
+            <a href="{{ route('customers.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('customers.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-user w-5"></i>
+                <span>Customers</span>
+            </a>
+        @endif
 
-        <!-- Products -->
-        <a href="{{ route('products.index') }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('products.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-box w-5"></i>
-            <span>Products</span>
-        </a>
+        <!-- Products - Admin, Developer, Manager, Employee -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
+            <a href="{{ route('products.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('products.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-box w-5"></i>
+                <span>Products</span>
+            </a>
+        @endif
 
-        <!-- Reports -->
-        <a href="{{ route('reports') }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('reports') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-chart-bar w-5"></i>
-            <span>Reports</span>
-        </a>
+        <!-- Reports - Admin, Developer, Manager -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager']))
+            <a href="{{ route('reports') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('reports') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-chart-bar w-5"></i>
+                <span>Reports</span>
+            </a>
+        @endif
 
-        <!-- Users (Team Management) -->
-        <a href="{{ route('users.index') ?? '#' }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('users.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-users w-5"></i>
-            <span>Users</span>
-        </a>
+        <!-- Users (Team Management) - Admin, Developer only -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer']))
+            <a href="{{ route('users.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('users.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-users w-5"></i>
+                <span>Users</span>
+            </a>
+        @endif
 
-        <!-- Notifications -->
+        <!-- Notifications - Available to all authenticated users -->
         <a href="{{ route('notifications.index') }}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
                   {{ request()->routeIs('notifications.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
@@ -70,16 +80,18 @@
             <span>Notifications</span>
         </a>
 
-        <!-- Settings -->
-        <a href="{{ route('settings.index') }}"
-           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                  {{ request()->routeIs('settings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-            <i class="fas fa-cog w-5"></i>
-            <span>Settings</span>
-        </a>
+        <!-- Settings - Admin, Developer, Manager -->
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager']))
+            <a href="{{ route('settings.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('settings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-cog w-5"></i>
+                <span>Settings</span>
+            </a>
+        @endif
     </nav>
 
-    <!-- 💬 Help & Support -->
+    <!-- 💬 Help & Support - Available to all authenticated users -->
     <div class="p-3 border-t border-gray-700">
         <a href="{{ route('help') }}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
