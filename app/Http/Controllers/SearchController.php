@@ -57,20 +57,42 @@ class SearchController extends Controller
             /*
             |--------------------------------------------------------------------------
             | INVOICE SEARCH (Show invoice + customer info)
+            | Search by: invoice_number, amount, project_address, description
+            | Also search by related customer name and email
             |--------------------------------------------------------------------------
             */
             $invoices = Invoice::with('customer')
-                ->where(function ($q) use ($likePattern) {
+                ->where(function ($q) use ($likePattern, $query) {
                     $q->where('invoice_number', 'LIKE', $likePattern)
-                        ->orWhere('description', 'LIKE', $likePattern);
+                        ->orWhere('description', 'LIKE', $likePattern)
+                        ->orWhere('project_address', 'LIKE', $likePattern)
+                        ->orWhere('amount', 'LIKE', $likePattern);
+
+                    // Search by customer name or email if invoice has customer relationship
+                    $q->orWhereHas('customer', function ($customerQuery) use ($likePattern) {
+                        $customerQuery->where('name', 'LIKE', $likePattern)
+                            ->orWhere('email', 'LIKE', $likePattern);
+                    });
                 })
                 ->take(10)
                 ->get()
                 ->filter(function ($i) use ($query) {
-                    return FuzzySearch::isSimilar($i->invoice_number, $query)
-                        || FuzzySearch::isSimilar($i->description, $query)
-                        || stripos($i->invoice_number, $query) !== false
-                        || stripos($i->description, $query) !== false;
+                    // Filter using fuzzy search and stripos with null checks
+                    $matchesInvoice =
+                        ($i->invoice_number && (FuzzySearch::isSimilar($i->invoice_number, $query) || stripos($i->invoice_number, $query) !== false))
+                        || ($i->description && (FuzzySearch::isSimilar($i->description, $query) || stripos($i->description, $query) !== false))
+                        || ($i->project_address && (FuzzySearch::isSimilar($i->project_address, $query) || stripos($i->project_address, $query) !== false))
+                        || ($i->amount && stripos((string)$i->amount, $query) !== false);
+
+                    // Check customer fields with null checks
+                    $matchesCustomer = false;
+                    if ($i->customer) {
+                        $matchesCustomer =
+                            ($i->customer->name && (FuzzySearch::isSimilar($i->customer->name, $query) || stripos($i->customer->name, $query) !== false))
+                            || ($i->customer->email && (FuzzySearch::isSimilar($i->customer->email, $query) || stripos($i->customer->email, $query) !== false));
+                    }
+
+                    return $matchesInvoice || $matchesCustomer;
                 })
                 ->values()
                 ->map(function ($i) {
@@ -79,7 +101,7 @@ class SearchController extends Controller
 
                     return [
                         'type'  => 'invoice',
-                        'label' => "Invoice #{$i->invoice_number} — {$customerName} — {$i->total_amount} USD",
+                        'label' => "Invoice #{$i->invoice_number} — {$customerName} — {$i->amount} USD",
                         'url'   => route('invoices.show', $i->id)
                     ];
                 });

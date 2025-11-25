@@ -63,24 +63,150 @@ class SettingController extends Controller
         return back()->with('success', 'Integration settings updated successfully.');
     }
 
-    public function updateInvoice(UpdateInvoiceRequest  $request)
+    public function updateInvoice(UpdateInvoiceRequest $request)
     {
         $this->authorize('updateInvoice', \App\Models\Setting::class);
 
         $validated = $request->validated();
         $setting = Setting::firstOrNew();
 
-        $setting->fill([
-            'tax_id' => $validated['tax_id_invoice'] ?? null,
-            'enable_tax_id' => $request->has('enable_tax_id'),
-            'enable_terms' => $request->has('enable_terms'),
-            'enable_invoice_notes' => $request->has('enable_invoice_notes'),
-            'enable_tax' => $request->has('enable_tax'),
-            'enable_due_date' => $request->has('enable_due_date'),
-            'starting_invoice_number' => $validated['starting_invoice_number'],
-        ])->save();
+        try {
+            // Basic invoice settings
+            $setting->fill([
+                'tax_id' => $validated['tax_id_invoice'] ?? null,
+                'enable_tax_id' => $request->has('enable_tax_id'),
+                'enable_terms' => $request->has('enable_terms'),
+                'enable_invoice_notes' => $request->has('enable_invoice_notes'),
+                'enable_tax' => $request->has('enable_tax'),
+                'enable_due_date' => $request->has('enable_due_date'),
+                'enable_rush_delivery' => $request->has('enable_rush_delivery'),
+                'starting_invoice_number' => $validated['starting_invoice_number'],
+            ]);
 
-        return back()->with('success', 'Invoice settings updated successfully.');
+            // Handle rush delivery options
+            if ($request->has('enable_rush_delivery') && $request->has('rush_options')) {
+                $rushOptions = [];
+
+                foreach ($request->rush_options as $option) {
+                    $rushOptions[] = [
+                        'label' => trim($option['label']),
+                        'days' => $option['days'],
+                        'fee' => floatval($option['fee']),
+                    ];
+                }
+
+                $setting->rush_delivery_options = $rushOptions;
+            } else {
+                // If rush delivery is disabled, clear the options
+                if (!$request->has('enable_rush_delivery')) {
+                    $setting->rush_delivery_options = null;
+                }
+            }
+
+            $setting->save();
+
+            return back()->with('success', 'Invoice settings updated successfully.');
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to update invoice settings', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()
+                ->with('error', 'Failed to update invoice settings: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Update invoice settings including rush delivery options
+     */
+    public function updateInvoiceSettings(Request $request)
+    {
+        $setting = Setting::firstOrFail();
+
+        // Check authorization
+        if (!Gate::allows('updateInvoice', $setting)) {
+            return redirect()->back()->with('error', 'You do not have permission to update invoice settings.');
+        }
+
+        // Validate the request
+        $validated = $request->validate([
+            'tax_id_invoice' => 'nullable|string|max:255',
+            'starting_invoice_number' => 'nullable|string|regex:/^INV-\d{4}-\d{3,}$/',
+            'enable_terms' => 'nullable|boolean',
+            'enable_invoice_notes' => 'nullable|boolean',
+            'enable_due_date' => 'nullable|boolean',
+            'enable_tax' => 'nullable|boolean',
+            'enable_tax_id' => 'nullable|boolean',
+            'enable_rush_delivery' => 'nullable|boolean',
+            'rush_options' => 'nullable|array|min:1',
+            'rush_options.*.label' => 'required_with:rush_options|string|max:255',
+            'rush_options.*.days' => 'required_with:rush_options',
+            'rush_options.*.fee' => 'required_with:rush_options|numeric|min:0',
+        ]);
+
+        try {
+            // Update tax ID if provided
+            if (isset($validated['tax_id_invoice'])) {
+                $setting->tax_id = $validated['tax_id_invoice'];
+            }
+
+            // Update starting invoice number if provided
+            if (isset($validated['starting_invoice_number'])) {
+                $setting->starting_invoice_number = $validated['starting_invoice_number'];
+            }
+
+            // Update boolean fields (handle checkboxes - they won't be in request if unchecked)
+            $setting->enable_terms = $request->has('enable_terms');
+            $setting->enable_invoice_notes = $request->has('enable_invoice_notes');
+            $setting->enable_due_date = $request->has('enable_due_date');
+            $setting->enable_tax = $request->has('enable_tax');
+            $setting->enable_tax_id = $request->has('enable_tax_id');
+            $setting->enable_rush_delivery = $request->has('enable_rush_delivery');
+
+            // Handle rush delivery options
+            if ($request->has('enable_rush_delivery') && $request->has('rush_options')) {
+                $rushOptions = [];
+
+                foreach ($request->rush_options as $option) {
+                    // Validate and format each option
+                    $rushOptions[] = [
+                        'label' => trim($option['label']),
+                        'days' => $option['days'],
+                        'fee' => floatval($option['fee']),
+                    ];
+                }
+
+                $setting->rush_delivery_options = $rushOptions;
+
+                Log::info('Rush delivery options saved', [
+                    'options' => $rushOptions,
+                    'count' => count($rushOptions)
+                ]);
+            } else {
+                // If rush delivery is disabled, keep existing options or set to null
+                if (!$request->has('enable_rush_delivery')) {
+                    $setting->rush_delivery_options = null;
+                }
+            }
+
+            // Save the settings
+            $setting->save();
+
+            return redirect()->back()->with('success', 'Invoice settings updated successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update invoice settings', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Failed to update invoice settings: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     public function updatePassword(UpdatePasswordRequest  $request)

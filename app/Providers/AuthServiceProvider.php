@@ -30,7 +30,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
         $this->registerPolicies();
 
         // Admin and Developer bypass all checks

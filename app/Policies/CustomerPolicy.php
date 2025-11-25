@@ -61,6 +61,7 @@ class CustomerPolicy
      */
     public function search(User $user)
     {
+
         return in_array($user->role, ['admin', 'developer', 'manager', 'employee']);
     }
 }

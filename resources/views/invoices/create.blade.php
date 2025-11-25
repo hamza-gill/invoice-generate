@@ -98,7 +98,7 @@
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
                                    autocomplete="off">
                             <p class="text-xs text-gray-500 mt-2">
-                                Start typing to search for an address in the U.S. — or type it manually if it’s not listed.
+                                Start typing to search for an address in the U.S. — or type it manually if it's not listed.
                             </p>
                         </div>
                     </div>
@@ -142,42 +142,42 @@
                         </div>
                     </div>
 
-                    {{-- RUSH ADD-ON FEE (NEW SECTION) --}}
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">Rush Add-On (Optional)</h3>
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" id="enable_rush_addon" name="enable_rush_addon" value="1"
-                                       class="h-5 w-5 text-blue-600 border-gray-300 rounded">
-                                <label for="enable_rush_addon" class="text-gray-700 font-medium">Enable Rush Add-On</label>
+                    {{-- RUSH DELIVERY ENABLE (SIMPLE CHECKBOX) --}}
+                    @if($globalSettings->hasRushDelivery())
+                        <div class="bg-yellow-50 border border-yellow-300 rounded-2xl shadow-sm p-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex items-center h-5">
+                                    <input type="checkbox"
+                                           id="enable_rush_delivery"
+                                           name="enable_rush_delivery"
+                                           value="1"
+                                           {{ old('enable_rush_delivery') ? 'checked' : '' }}
+                                           class="w-5 h-5 text-yellow-600 bg-white border-gray-300 rounded focus:ring-yellow-500 focus:ring-2">
+                                </div>
+                                <div class="flex-1">
+                                    <label for="enable_rush_delivery" class="font-semibold text-gray-800 cursor-pointer">
+                                        <i class="fas fa-shipping-fast mr-2 text-yellow-600"></i>Enable Rush Delivery Options
+                                    </label>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        Customer will be able to select rush delivery options when accepting the invoice payment.
+                                    </p>
+                                    <div class="mt-3 p-3 bg-white rounded-lg border border-yellow-200">
+                                        <p class="text-xs text-gray-700 font-medium mb-2">Available options:</p>
+                                        <ul class="text-xs text-gray-600 space-y-1">
+                                            @foreach ($globalSettings->rush_options as $option)
+                                                <li class="flex justify-between">
+                                                    <span>• {{ $option['label'] }}</span>
+                                                    <span class="font-semibold {{ $option['fee'] > 0 ? 'text-yellow-700' : 'text-green-600' }}">
+                                                        {{ $option['fee'] > 0 ? '+$' . number_format($option['fee'], 2) : 'FREE' }}
+                                                    </span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div id="rushAddonSection" class="hidden space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Type</label>
-                                <select id="rush_delivery_type" name="rush_delivery_type"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
-                                    <option value="">Select delivery type...</option>
-                                    <option value="shipping">Physical Delivery (Shipping)</option>
-                                    <option value="electronic">Electronic Delivery</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Add-On Description</label>
-                                <textarea id="rush_description" name="rush_description" rows="3"
-                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                                          readonly></textarea>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Add-On Fee ($)</label>
-                                <input type="number" step="0.01" id="rush_fee" name="rush_fee"
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
-                            </div>
-                        </div>
-                    </div>
+                    @endif
 
                     {{-- LINE ITEMS --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -304,10 +304,6 @@
                     total += parseFloat(el.dataset.value || 0);
                 });
 
-                // Include Rush Add-On if enabled
-                const rushFee = parseFloat($('#enable_rush_addon').is(':checked') ? ($('#rush_fee').val() || 0) : 0);
-                total += rushFee;
-
                 totalDisplay.textContent = `$${total.toFixed(2)}`;
             }
 
@@ -396,32 +392,8 @@
 
             addBtn.addEventListener('click', addLineItem);
 
-            // ✅ Rush Add-On Logic
-            $('#enable_rush_addon').on('change', function () {
-                if (this.checked) {
-                    $('#rushAddonSection').removeClass('hidden');
-                } else {
-                    $('#rushAddonSection').addClass('hidden');
-                    $('#rush_description').val('');
-                    $('#rush_fee').val('');
-                    $('#rush_delivery_type').val('');
-                    updateTotal();
-                }
-                updateTotal();
-            });
-
-            $('#rush_delivery_type').on('change', function () {
-                const type = $(this).val();
-                let description = '';
-                if (type === 'shipping') {
-                    description = 'Rush Add-On: Expedited processing and physical shipment within 24–48 hours.';
-                } else if (type === 'electronic') {
-                    description = 'Rush Add-On: Priority electronic delivery of completed documents within 24 hours.';
-                }
-                $('#rush_description').val(description);
-            });
-
-            $('#rush_fee').on('input', updateTotal);
+            // Initial update
+            updateTotal();
         });
 
         // ✅ Google Places Autocomplete

@@ -274,6 +274,7 @@
                     </div>
 
                     {{-- 🧾 Invoice Configuration --}}
+                    {{-- 🧾 Invoice Configuration --}}
                     <div id="tab-content-invoice" class="hidden">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-6">Invoice Configuration</h2>
 
@@ -365,6 +366,98 @@
                                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-600 transition-all"></div>
                                         <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-5 transition-transform"></div>
                                     </label>
+                                </div>
+
+                                <div class="flex items-center justify-between mt-3">
+                                    <span class="text-gray-700 font-medium">Enable Rush Delivery</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="enable_rush_delivery" value="1"
+                                               id="enable_rush_delivery_toggle"
+                                               class="sr-only peer"
+                                            {{ old('enable_rush_delivery', $setting->enable_rush_delivery) ? 'checked' : '' }}
+                                            {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-600 transition-all"></div>
+                                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-5 transition-transform"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {{-- 🚀 Rush Delivery Options Configuration --}}
+                            <div id="rush_delivery_section" class="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-lg {{ old('enable_rush_delivery', $setting->enable_rush_delivery) ? '' : 'hidden' }}">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-xl font-semibold text-gray-800">Rush Delivery Options</h3>
+                                    <button type="button"
+                                            id="add_rush_option"
+                                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all"
+                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                        <i class="fas fa-plus mr-2"></i>Add Option
+                                    </button>
+                                </div>
+
+                                <p class="text-sm text-gray-600 mb-4">
+                                    Configure rush delivery options for invoices. Customers will be able to select from these options during checkout.
+                                </p>
+
+                                <div id="rush_options_container" class="space-y-4">
+                                    @php
+                                        $rushOptions = old('rush_options', $setting->rush_delivery_options ?? $setting->getDefaultRushOptions());
+                                    @endphp
+
+                                    @foreach ($rushOptions as $index => $option)
+                                        <div class="rush-option-item bg-white p-4 border border-gray-300 rounded-lg" data-index="{{ $index }}">
+                                            <div class="flex items-end gap-4">
+                                                <div class="flex-1">
+                                                    <label class="block text-gray-600 font-medium mb-2">Label</label>
+                                                    <input type="text"
+                                                           name="rush_options[{{ $index }}][label]"
+                                                           value="{{ $option['label'] ?? '' }}"
+                                                           placeholder="e.g., Express Delivery"
+                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                                           required
+                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                                </div>
+
+                                                <div class="w-40">
+                                                    <label class="block text-gray-600 font-medium mb-2">Days</label>
+                                                    <input type="text"
+                                                           name="rush_options[{{ $index }}][days]"
+                                                           value="{{ $option['days'] ?? '' }}"
+                                                           placeholder="2 or 'standard'"
+                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                                           required
+                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                                    <p class="text-xs text-gray-500 mt-1">Number or 'standard'</p>
+                                                </div>
+
+                                                <div class="w-32">
+                                                    <label class="block text-gray-600 font-medium mb-2">Fee ($)</label>
+                                                    <input type="number"
+                                                           step="0.01"
+                                                           name="rush_options[{{ $index }}][fee]"
+                                                           value="{{ $option['fee'] ?? 0 }}"
+                                                           placeholder="0.00"
+                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                                           required
+                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                                </div>
+
+                                                @can('updateInvoice', $setting)
+                                                    <button type="button"
+                                                            class="remove-rush-option bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition-all"
+                                                            onclick="removeRushOption(this)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p class="text-sm text-blue-700">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        <strong>Tip:</strong> For standard delivery (no rush fee), use 'standard' in the Days field and set Fee to 0.
+                                    </p>
                                 </div>
                             </div>
 
@@ -608,5 +701,83 @@
         tabs.invoice?.addEventListener('click', () => switchTab(tabs.invoice, tabs.contentInvoice));
         tabs.webhook?.addEventListener('click', () => switchTab(tabs.webhook, tabs.contentWebhook));
         tabs.sec?.addEventListener('click', () => switchTab(tabs.sec, tabs.contentSecurity));
+    </script>
+    <script>
+        // ... existing scripts ...
+
+        // Rush Delivery Toggle
+        document.getElementById('enable_rush_delivery_toggle')?.addEventListener('change', function() {
+            const rushSection = document.getElementById('rush_delivery_section');
+            if (this.checked) {
+                rushSection.classList.remove('hidden');
+            } else {
+                rushSection.classList.add('hidden');
+            }
+        });
+
+        // Add Rush Option
+        let rushOptionIndex = {{ count($rushOptions ?? []) }};
+        document.getElementById('add_rush_option')?.addEventListener('click', function() {
+            const container = document.getElementById('rush_options_container');
+            const newOption = `
+            <div class="rush-option-item bg-white p-4 border border-gray-300 rounded-lg" data-index="${rushOptionIndex}">
+                <div class="flex items-end gap-4">
+                    <div class="flex-1">
+                        <label class="block text-gray-600 font-medium mb-2">Label</label>
+                        <input type="text"
+                               name="rush_options[${rushOptionIndex}][label]"
+                               placeholder="e.g., Express Delivery"
+                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+
+                    <div class="w-40">
+                        <label class="block text-gray-600 font-medium mb-2">Days</label>
+                        <input type="text"
+                               name="rush_options[${rushOptionIndex}][days]"
+                               placeholder="2 or 'standard'"
+                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                               required>
+                        <p class="text-xs text-gray-500 mt-1">Number or 'standard'</p>
+                    </div>
+
+                    <div class="w-32">
+                        <label class="block text-gray-600 font-medium mb-2">Fee ($)</label>
+                        <input type="number"
+                               step="0.01"
+                               name="rush_options[${rushOptionIndex}][fee]"
+                               placeholder="0.00"
+                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+
+                    <button type="button"
+                            class="remove-rush-option bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition-all"
+                            onclick="removeRushOption(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+            container.insertAdjacentHTML('beforeend', newOption);
+            rushOptionIndex++;
+        });
+
+        // Remove Rush Option
+        function removeRushOption(button) {
+            const container = document.getElementById('rush_options_container');
+            const items = container.querySelectorAll('.rush-option-item');
+
+            if (items.length > 1) {
+                button.closest('.rush-option-item').remove();
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cannot Remove',
+                    text: 'At least one rush delivery option must be configured.',
+                    confirmButtonColor: '#3B82F6'
+                });
+            }
+        }
     </script>
 @endsection

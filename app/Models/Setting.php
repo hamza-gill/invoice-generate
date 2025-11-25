@@ -28,8 +28,21 @@ class Setting extends Model
         'enable_tax',
         'enable_tax_id',
         'enable_due_date',
+        'enable_rush_delivery',
+        'rush_delivery_options',
         'starting_invoice_number',
         'google_places_key'
+    ];
+
+    protected $casts = [
+        'enable_terms' => 'boolean',
+        'enable_invoice_notes' => 'boolean',
+        'enable_tax' => 'boolean',
+        'enable_tax_id' => 'boolean',
+        'enable_due_date' => 'boolean',
+        'enable_rush_delivery' => 'boolean',
+        'rush_delivery_options' => 'array',
+        'tax_percentage' => 'decimal:2',
     ];
 
     protected static function booted()
@@ -58,5 +71,98 @@ class Setting extends Model
     public function setGooglePlacesKeyAttribute($value)
     {
         $this->attributes['google_places_key'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    /**
+     * Get default rush delivery options
+     *
+     * @return array
+     */
+    public function getDefaultRushOptions()
+    {
+        return [
+            [
+                'label' => 'Express (2 days)',
+                'days' => 2,
+                'fee' => 295
+            ],
+            [
+                'label' => 'Fast (3 days)',
+                'days' => 3,
+                'fee' => 195
+            ],
+            [
+                'label' => 'Quick (4 days)',
+                'days' => 4,
+                'fee' => 95
+            ],
+            [
+                'label' => 'Standard (5-7 days)',
+                'days' => 'standard',
+                'fee' => 0
+            ],
+        ];
+    }
+
+    /**
+     * Get rush delivery options with fallback to defaults
+     *
+     * @return array
+     */
+    public function getRushOptionsAttribute()
+    {
+        // If rush_delivery_options is null or empty, return defaults
+        if (empty($this->rush_delivery_options)) {
+            return $this->getDefaultRushOptions();
+        }
+
+        return $this->rush_delivery_options;
+    }
+
+    /**
+     * Check if rush delivery is enabled and has options
+     *
+     * @return bool
+     */
+    public function hasRushDelivery()
+    {
+        return $this->enable_rush_delivery && !empty($this->rush_options);
+    }
+
+    /**
+     * Get rush delivery option by days
+     *
+     * @param string|int $days
+     * @return array|null
+     */
+    public function getRushOptionByDays($days)
+    {
+        $options = $this->rush_options;
+
+        foreach ($options as $option) {
+            if ($option['days'] == $days) {
+                return $option;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get standard delivery option (fee = 0)
+     *
+     * @return array|null
+     */
+    public function getStandardDeliveryOption()
+    {
+        $options = $this->rush_options;
+
+        foreach ($options as $option) {
+            if ($option['fee'] == 0 || $option['days'] === 'standard') {
+                return $option;
+            }
+        }
+
+        return null;
     }
 }
