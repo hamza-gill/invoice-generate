@@ -202,45 +202,145 @@
                         <form method="POST" action="{{ route('settings.integration.update') }}" class="space-y-6">
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @php
+                                    $userRole = auth()->user()->role ?? 'manager';
+                                    $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
+
+                                    // Mask Stripe Public Key (for ALL users)
+                                    $stripePublicKey = $setting->stripe_public_key ?? '';
+                                    $maskedPublicKey = $stripePublicKey
+                                        ? str_repeat('*', max(0, strlen($stripePublicKey) - 4)) . substr($stripePublicKey, -4)
+                                        : '';
+
+                                    // Mask Stripe Secret Key (for ALL users)
+                                    $stripeSecretKey = $setting->stripe_secret_key ?? '';
+                                    $maskedSecretKey = $stripeSecretKey
+                                        ? str_repeat('*', max(0, strlen($stripeSecretKey) - 4)) . substr($stripeSecretKey, -4)
+                                        : '';
+
+                                    // Mask Webhook URL (for ALL users)
+                                    $webhookUrl = $setting->webhook_url ?? '';
+                                    $maskedWebhookUrl = $webhookUrl
+                                        ? str_repeat('*', max(0, strlen($webhookUrl) - 4)) . substr($webhookUrl, -4)
+                                        : '';
+
+                                    // Mask Webhook Secret (for ALL users)
+                                    $webhookSecret = $setting->webhook_secret ?? '';
+                                    $maskedWebhookSecret = $webhookSecret
+                                        ? str_repeat('*', max(0, strlen($webhookSecret) - 4)) . substr($webhookSecret, -4)
+                                        : '';
+
+                                    // Mask Google Places Key (for ALL users)
+                                    $googleKey = $setting->google_places_key ?? '';
+                                    $maskedGoogleKey = $googleKey
+                                        ? str_repeat('*', max(0, strlen($googleKey) - 4)) . substr($googleKey, -4)
+                                        : '';
+                                @endphp
+
+                                    <!-- Stripe Public Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Public Key</label>
-                                    <input type="text" name="stripe_public_key" value="{{ old('stripe_public_key', $setting->stripe_public_key) }}"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="stripe_public_key"
+                                            name="stripe_public_key"
+                                            value="{{ old('stripe_public_key', $maskedPublicKey) }}"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                            placeholder="pk_live_xxxxx"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleStripePublicKey"
+                                                    data-full-key="{{ $stripePublicKey }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
+                                <!-- Stripe Secret Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Secret Key</label>
-                                    <input type="text" name="stripe_secret_key" value="{{ old('stripe_secret_key', $setting->stripe_secret_key) }}"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="stripe_secret_key"
+                                            name="stripe_secret_key"
+                                            value="{{ old('stripe_secret_key', $maskedSecretKey) }}"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                            placeholder="sk_live_xxxxx"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleStripeSecretKey"
+                                                    data-full-key="{{ $stripeSecretKey }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
+                                <!-- Webhook URL -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
-                                    <div class="flex items-center">
-                                        <input type="text" readonly value="{{ $setting->webhook_url }}"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 cursor-not-allowed">
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="webhook_url"
+                                            readonly
+                                            value="{{ $maskedWebhookUrl }}"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 cursor-not-allowed">
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleWebhookUrl"
+                                                    data-full-key="{{ $webhookUrl }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+
                                         <button type="button"
-                                                onclick="copyWebhook('{{ $setting->webhook_url }}')"
-                                                class="ml-3 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition">
+                                                onclick="copyWebhook('{{ $webhookUrl }}')"
+                                                class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition">
                                             Copy
                                         </button>
                                     </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
+                                <!-- Webhook Secret -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
-                                    <input type="text" name="webhook_secret" value="{{ old('webhook_secret', $setting->webhook_secret) }}"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="integration_webhook_secret"
+                                            name="webhook_secret"
+                                            value="{{ old('webhook_secret', $maskedWebhookSecret) }}"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleIntegrationWebhookSecret"
+                                                    data-full-key="{{ $webhookSecret }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
-                                @php
-                                    $googleKey = $setting->google_places_key ?? '';
-                                    $maskedKey = $googleKey ? str_repeat('*', max(0, strlen($googleKey) - 4)) . substr($googleKey, -4) : '';
-                                @endphp
-
+                                <!-- Google Places API Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Google Places API Key</label>
                                     <div class="flex items-center space-x-3">
@@ -248,17 +348,19 @@
                                             type="password"
                                             id="google_places_key"
                                             name="google_places_key"
-                                            value="{{ old('google_places_key', $maskedKey) }}"
+                                            value="{{ old('google_places_key', $maskedGoogleKey) }}"
                                             class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
                                             placeholder="Enter your Google Places API Key"
                                             {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
 
-                                        <button type="button"
-                                                id="toggleGoogleKey"
-                                                data-full-key="{{ $googleKey }}"
-                                                class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleGoogleKey"
+                                                    data-full-key="{{ $googleKey }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
@@ -274,7 +376,6 @@
                     </div>
 
                     {{-- 🧾 Invoice Configuration --}}
-                    {{-- 🧾 Invoice Configuration --}}
                     <div id="tab-content-invoice" class="hidden">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-6">Invoice Configuration</h2>
 
@@ -287,27 +388,70 @@
                         <form method="POST" action="{{ route('settings.invoice.update') }}" class="space-y-6">
                             @csrf
 
+                            @php
+                                $userRole = auth()->user()->role ?? 'manager';
+                                $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
+
+                                // Mask Tax ID
+                                $taxId = $setting->tax_id ?? '';
+                                $maskedTaxId = $taxId
+                                    ? str_repeat('*', max(0, strlen($taxId) - 4)) . substr($taxId, -4)
+                                    : '';
+
+                                // Mask Starting Invoice Number
+                                $invoiceNumber = $setting->starting_invoice_number ?? 'INV-' . date('Y') . '-001';
+                                $maskedInvoiceNumber = $invoiceNumber
+                                    ? str_repeat('*', max(0, strlen($invoiceNumber) - 4)) . substr($invoiceNumber, -4)
+                                    : '';
+                            @endphp
+
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Tax ID</label>
-                                <input type="text" name="tax_id_invoice"
-                                       value="{{ old('tax_id_invoice', $setting->tax_id) }}"
-                                       class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="123-456-789"
-                                    {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                <div class="flex items-center space-x-3">
+                                    <input
+                                        type="password"
+                                        id="tax_id_invoice"
+                                        name="tax_id_invoice"
+                                        value="{{ old('tax_id_invoice', $maskedTaxId) }}"
+                                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="123-456-789"
+                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+
+                                    @if($isAdminOrDeveloper)
+                                        <button type="button"
+                                                id="toggleTaxId"
+                                                data-full-key="{{ $taxId }}"
+                                                class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                             </div>
 
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Starting Invoice Number</label>
-                                <input type="text"
-                                       name="starting_invoice_number"
-                                       value="{{ old('starting_invoice_number', $setting->starting_invoice_number ?? 'INV-' . date('Y') . '-001') }}"
-                                       class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="INV-2025-001"
-                                       pattern="^INV-\d{4}-\d{3,}$"
-                                       title="Use the format INV-YYYY-NNN (e.g., INV-2025-001)"
-                                    {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+                                <div class="flex items-center space-x-3">
+                                    <input
+                                        type="password"
+                                        id="starting_invoice_number"
+                                        name="starting_invoice_number"
+                                        value="{{ old('starting_invoice_number', $maskedInvoiceNumber) }}"
+                                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="INV-2025-001"
+                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
+
+                                    @if($isAdminOrDeveloper)
+                                        <button type="button"
+                                                id="toggleInvoiceNumber"
+                                                data-full-key="{{ $invoiceNumber }}"
+                                                class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    @endif
+                                </div>
                                 <p class="text-sm text-gray-500 mt-1">
-                                    Set the starting invoice number. The next invoices will auto-increment from this number.
+                                    Only the last 4 characters are shown by default. Set the starting invoice number. The next invoices will auto-increment from this number.
                                     <br>Format: <code>INV-YYYY-NNN</code> (e.g., <code>INV-{{ date('Y') }}-001</code>)
                                 </p>
                             </div>
@@ -484,20 +628,69 @@
                             <form method="POST" action="{{ route('settings.webhook.update') }}" class="space-y-6">
                                 @csrf
 
+                                @php
+                                    $userRole = auth()->user()->role ?? 'manager';
+                                    $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
+
+                                    // Mask Webhook URL
+                                    $webhookSettingUrl = $webhookSetting->webhook_url ?? '';
+                                    $maskedWebhookSettingUrl = $webhookSettingUrl
+                                        ? str_repeat('*', max(0, strlen($webhookSettingUrl) - 4)) . substr($webhookSettingUrl, -4)
+                                        : '';
+
+                                    // Mask Webhook Secret
+                                    $webhookSecret = $webhookSetting->webhook_secret ?? '';
+                                    $maskedWebhookSecret = $webhookSecret
+                                        ? str_repeat('*', max(0, strlen($webhookSecret) - 4)) . substr($webhookSecret, -4)
+                                        : '';
+                                @endphp
+
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
-                                    <input type="url" name="webhook_url" value="{{ old('webhook_url', $webhookSetting->webhook_url ?? '') }}"
-                                           placeholder="https://example.com/webhook"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="webhook_setting_url"
+                                            name="webhook_url"
+                                            value="{{ old('webhook_url', $maskedWebhookSettingUrl) }}"
+                                            placeholder="https://example.com/webhook"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleWebhookSettingUrl"
+                                                    data-full-key="{{ $webhookSettingUrl }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
-                                    <input type="text" name="webhook_secret" value="{{ old('webhook_secret', $webhookSetting->webhook_secret ?? '') }}"
-                                           placeholder="secret-key"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
+                                    <div class="flex items-center space-x-3">
+                                        <input
+                                            type="password"
+                                            id="webhook_secret"
+                                            name="webhook_secret"
+                                            value="{{ old('webhook_secret', $maskedWebhookSecret) }}"
+                                            placeholder="secret-key"
+                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
+
+                                        @if($isAdminOrDeveloper)
+                                            <button type="button"
+                                                    id="toggleWebhookSecret"
+                                                    data-full-key="{{ $webhookSecret }}"
+                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
                                 <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Customer Events</h3>
@@ -628,8 +821,26 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            const input = document.getElementById('google_places_key');
-            const toggle = document.getElementById('toggleGoogleKey');
+            // Integration Tab Keys
+            setupKeyToggle('google_places_key', 'toggleGoogleKey');
+            setupKeyToggle('stripe_public_key', 'toggleStripePublicKey');
+            setupKeyToggle('stripe_secret_key', 'toggleStripeSecretKey');
+            setupKeyToggle('webhook_url', 'toggleWebhookUrl');
+            setupKeyToggle('integration_webhook_secret', 'toggleIntegrationWebhookSecret');
+
+            // Invoice Configuration Tab Keys
+            setupKeyToggle('tax_id_invoice', 'toggleTaxId');
+            setupKeyToggle('starting_invoice_number', 'toggleInvoiceNumber');
+
+            // Webhook Settings Tab Keys
+            setupKeyToggle('webhook_setting_url', 'toggleWebhookSettingUrl');
+            setupKeyToggle('webhook_secret', 'toggleWebhookSecret');
+        });
+
+        // Reusable function for key toggle functionality
+        function setupKeyToggle(inputId, toggleId) {
+            const input = document.getElementById(inputId);
+            const toggle = document.getElementById(toggleId);
 
             if (input && toggle) {
                 const fullKey = toggle.dataset.fullKey || '';
@@ -638,10 +849,12 @@
                     const isMasked = input.type === 'password';
 
                     if (isMasked) {
+                        // Show full key
                         input.type = 'text';
                         input.value = fullKey;
                         toggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
                     } else {
+                        // Mask key
                         const masked = fullKey
                             ? '*'.repeat(Math.max(0, fullKey.length - 4)) + fullKey.slice(-4)
                             : '';
@@ -651,7 +864,7 @@
                     }
                 });
             }
-        });
+        }
 
         function copyWebhook(url) {
             navigator.clipboard.writeText(url).then(() => {
@@ -701,9 +914,6 @@
         tabs.invoice?.addEventListener('click', () => switchTab(tabs.invoice, tabs.contentInvoice));
         tabs.webhook?.addEventListener('click', () => switchTab(tabs.webhook, tabs.contentWebhook));
         tabs.sec?.addEventListener('click', () => switchTab(tabs.sec, tabs.contentSecurity));
-    </script>
-    <script>
-        // ... existing scripts ...
 
         // Rush Delivery Toggle
         document.getElementById('enable_rush_delivery_toggle')?.addEventListener('change', function() {
