@@ -1,6 +1,5 @@
 @extends('layouts.guest.app')
-
-@section('title', 'Login - ' . config('app.name', 'ReconX'))
+@section('title', 'Login - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="w-full max-w-md">
@@ -9,7 +8,7 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
                     <i class="fas fa-exchange-alt text-white text-2xl"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-800">Welcome to {{ config('app.name', 'ReconX') }}</h1>
+                <h1 class="text-2xl font-bold text-gray-800">Welcome to {{ $globalSettings->company_name ?? config('app.name') }}</h1>
                 <p class="text-gray-600 mt-2">Sign in to your account to continue</p>
             </div>
 

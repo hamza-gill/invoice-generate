@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Customer Details - ReconX')
+@section('title', 'Customer Details -' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="mb-6">

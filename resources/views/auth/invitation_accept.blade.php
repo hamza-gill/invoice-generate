@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
+@section('title', 'Accept Invitation - ' . (config('settings.site_name') ?? config('app.name')))
 
-@section('title', 'Accept Invitation - ReconX')
 
 @section('content')
     <div class="min-h-screen flex items-center justify-center bg-gray-100">

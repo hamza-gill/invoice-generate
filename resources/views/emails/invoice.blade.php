@@ -13,7 +13,7 @@
                 💼 Invoice #{{ $invoice->invoice_number }}
             </h1>
             <p style="color: #6B7280; font-size: 15px; margin-top: 6px;">
-                Issued by {{ $invoice->customer->company_name ?? config('app.name') }}
+                Issued by {{ ($globalSettings->company_name ?? config('app.name')) }}
             </p>
         </td>
     </tr>
@@ -24,7 +24,7 @@
 </p>
 
 <p style="font-size: 16px; color: #4B5563; line-height: 1.6; margin-bottom: 25px;">
-    You’ve received a new invoice from <strong>{{ $invoice->customer->company_name ?? config('app.name') }}</strong>.
+    You’ve received a new invoice from <strong>{{ $globalSettings->company_name ?? config('app.name') }}</strong>.
     Please review the details below and either accept or reject this invoice.
 </p>
 
@@ -101,7 +101,7 @@
 
 <p style="font-size: 14px; color: #6B7280; margin-top: 20px;">
     Thanks,<br>
-    <strong>{{ config('app.name') }}</strong>
+    <strong>{{ $globalSettings->company_name ?? config('app.name') }}</strong>
 </p>
 
 <p style="font-size: 12px; color: #9CA3AF; margin-top: 10px;">

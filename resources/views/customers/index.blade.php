@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Customers - ReconX')
+@section('title', 'Customers - '.($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="flex justify-between items-center mb-6">

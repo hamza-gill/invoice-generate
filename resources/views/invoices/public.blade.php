@@ -1,5 +1,5 @@
 @extends('layouts.guest.app')
-@section('title', 'View Invoice - ReconX')
+@section('title', 'View Invoice -'.($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="max-w-5xl mx-auto mt-10 p-4 sm:p-6 bg-white rounded-3xl shadow-lg">

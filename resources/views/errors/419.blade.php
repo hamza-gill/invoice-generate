@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>419 - Session Expired | ReconX</title>
+    <title>419 - Session Expired | {{($globalSettings->company_name ?? config('app.name'))}}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

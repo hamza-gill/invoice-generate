@@ -2,14 +2,18 @@
     <!-- 🌐 Logo Section -->
     <div class="p-6 border-b border-gray-700">
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-exchange-alt text-white"></i>
             </div>
-            <div>
-                <h1 class="text-lg font-bold">{{ config('app.name', 'ReconX') }}</h1>
+
+            <div class="flex-1 min-w-0">
+                <h1 class="text-lg font-bold truncate">
+                    {{ $globalSettings->company_name ?? config('app.name') }}
+                </h1>
                 <p class="text-xs text-gray-400">Invoice Reconciliation</p>
             </div>
         </div>
+
     </div>
 
     <!-- 📋 Navigation Menu -->

@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Invoices - ' . config('app.name', 'ReconX'))
+@section('title', 'Invoices - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="flex justify-between items-center mb-6">

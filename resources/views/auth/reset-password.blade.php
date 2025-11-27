@@ -1,6 +1,6 @@
 @extends('layouts.guest.app')
 
-@section('title', 'Reset Password - ' . config('app.name', 'ReconX'))
+@section('title', 'Reset Password - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="w-full max-w-md">

@@ -1,9 +1,10 @@
 @extends('layouts.guest.app')
-@section('title', 'View Invoice - ReconX')
+@section('title', 'View Invoice - ' . ($globalSettings->company_name ?? config('app.name')))
+
 @section('content')
     <div class="max-w-5xl mx-auto mt-8 p-4 sm:p-6 bg-white rounded-2xl shadow-lg relative">
 
-        {{-- COPY URL BUTTON (Top Right) --}}
+        {{-- COPY URL BUTTON --}}
         <button id="copyUrlBtn"
                 class="absolute top-4 right-4 px-3 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 flex items-center space-x-2 transition z-10">
             <i class="fas fa-link"></i>
@@ -78,28 +79,26 @@
         </div>
 
         {{-- RUSH DELIVERY OPTIONS --}}
-        @if ($invoice->rush_fee)
+        @if ($globalSettings->enable_rush_delivery)
             <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
                 <h3 class="text-lg font-semibold mb-2">Enable Rush Delivery</h3>
                 <p class="text-gray-700 mb-3">Select your preferred delivery speed:</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    @php
-                        $rushOptions = [
-                            ['days' => 2, 'fee' => 295],
-                            ['days' => 3, 'fee' => 195],
-                            ['days' => 4, 'fee' => 95],
-                            ['days' => 'standard', 'fee' => 0],
-                        ];
-                    @endphp
-                    @foreach ($rushOptions as $option)
+                    @foreach ($globalSettings->rush_options as $option)
                         <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-yellow-100 transition">
-                            <input type="radio" name="rush_option" value="{{ $option['days'] }}" data-fee="{{ $option['fee'] }}" class="rush-option-radio mr-3"
+                            <input type="radio"
+                                   name="rush_option"
+                                   value="{{ $option['days'] }}"
+                                   data-fee="{{ $option['fee'] }}"
+                                   data-label="{{ $option['label'] }}"
+                                   class="rush-option-radio mr-3"
                                    @if($option['days'] === 'standard') checked @endif>
                             <span class="font-medium text-gray-800 text-sm sm:text-base">
-                            @if($option['days'] === 'standard')
-                                    Standard Timing: Delivery within 5-7 business days (FREE)
+                            {{ $option['label'] }}
+                                @if($option['fee'] > 0)
+                                    + ${{ number_format($option['fee'], 2) }}
                                 @else
-                                    Delivery within {{ $option['days'] }} business day{{ $option['days'] > 1 ? 's' : '' }} + ${{ $option['fee'] }}
+                                    (FREE)
                                 @endif
                         </span>
                         </label>
@@ -113,6 +112,8 @@
             @csrf
             <input type="hidden" name="rush_enabled_value" id="rush_enabled_value" value="0">
             <input type="hidden" name="rush_delivery_days" id="rush_delivery_days" value="standard">
+            <input type="hidden" name="rush_label" id="rush_label" value="Standard (5-7 days)">
+            <input type="hidden" name="rush_fee" id="rush_fee" value="0.00">
 
             <button type="submit"
                     class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl hover:bg-indigo-700 transition">
@@ -121,28 +122,20 @@
         </form>
     </div>
 
+    {{-- SCRIPTS --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // COPY URL BUTTON
             document.getElementById('copyUrlBtn').addEventListener('click', function () {
-                const url = window.location.href;
-                navigator.clipboard.writeText(url).then(() => {
+                navigator.clipboard.writeText(window.location.href).then(() => {
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
                         title: 'Link copied!',
-                        text: 'Invoice URL copied to clipboard',
                         showConfirmButton: false,
                         timer: 2000,
-                        timerProgressBar: true,
-                    });
-                }).catch(() => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Copy failed',
-                        text: 'Unable to copy the link.',
                     });
                 });
             });
@@ -153,10 +146,13 @@
             const rushTotalEl = document.getElementById('rush-total');
             const totalEl = document.getElementById('total-td');
             const subtotal = parseFloat(@json($invoice->items->sum(fn($i) => $i->quantity * $i->amount)));
+
             const rushValueInput = document.getElementById('rush_enabled_value');
             const rushDaysInput = document.getElementById('rush_delivery_days');
+            const rushLabelInput = document.getElementById('rush_label');
+            const rushFeeInput = document.getElementById('rush_fee');
 
-            function updateRushTotal(fee, days) {
+            function updateRushTotal(fee, days, label) {
                 if (fee > 0) {
                     rushRow.classList.remove('hidden');
                     rushTotalEl.textContent = '$' + fee.toFixed(2);
@@ -165,19 +161,24 @@
                     rushTotalEl.textContent = '$0.00';
                 }
                 totalEl.textContent = '$' + (subtotal + fee).toFixed(2);
+
                 rushValueInput.value = fee > 0 ? 1 : 0;
                 rushDaysInput.value = days;
+                rushLabelInput.value = label;
+                rushFeeInput.value = fee.toFixed(2);
             }
 
             rushRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     const fee = parseFloat(this.dataset.fee);
                     const days = this.value;
-                    updateRushTotal(fee, days);
+                    const label = this.dataset.label;
+                    updateRushTotal(fee, days, label);
                 });
 
+                // Initialize default
                 if (radio.checked) {
-                    updateRushTotal(parseFloat(radio.dataset.fee), radio.value);
+                    updateRushTotal(parseFloat(radio.dataset.fee), radio.value, radio.dataset.label);
                 }
             });
         });

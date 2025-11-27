@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Help & Support - ' . config('app.name', 'ReconX'))
+@section('title', 'Help & Support - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -8,7 +8,7 @@
         <div class="text-center mb-12">
             <h1 class="text-4xl font-bold text-gray-900">Help & Support</h1>
             <p class="text-gray-500 mt-3 text-lg">
-                We're here to help you get the most out of <span class="font-semibold text-blue-600">ReconX</span>.
+                We're here to help you get the most out of <span class="font-semibold text-blue-600">{{ $globalSettings->company_name ?? config('app.name') }}</span>.
             </p>
         </div>
 
@@ -17,7 +17,7 @@
             <h2 class="text-2xl font-semibold mb-2">Need quick help?</h2>
             <p class="text-blue-100 mb-6">Our support team is always ready to assist you with your questions and technical issues.</p>
             <div class="flex justify-center gap-4">
-                <a href="mailto:support@reconx.com"
+                <a href="mailto:support@{{ $globalSettings->company_name ?? config('app.name') }}.com"
                    class="bg-white text-blue-700 font-medium px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition">
                     ✉️ Email Support
                 </a>
@@ -38,7 +38,7 @@
                     <h3 class="text-lg font-semibold text-gray-800">Invoices & Billing</h3>
                 </div>
                 <p class="text-gray-500 text-sm leading-relaxed">
-                    Learn how to create, manage, and send invoices. Understand billing cycles and tax setup in ReconX.
+                    Learn how to create, manage, and send invoices. Understand billing cycles and tax setup in {{ $globalSettings->company_name ?? config('app.name') }}.
                 </p>
             </div>
 
@@ -50,7 +50,7 @@
                     <h3 class="text-lg font-semibold text-gray-800">Integrations</h3>
                 </div>
                 <p class="text-gray-500 text-sm leading-relaxed">
-                    Connect ReconX with Stripe, manage API keys, and set up payment automation easily.
+                    Connect {{ $globalSettings->company_name ?? config('app.name') }} with Stripe, manage API keys, and set up payment automation easily.
                 </p>
             </div>
 
@@ -96,7 +96,7 @@
                 <details class="bg-white shadow rounded-lg p-5">
                     <summary class="font-medium text-gray-800 cursor-pointer">📩 How can I contact support?</summary>
                     <p class="mt-2 text-gray-600 text-sm leading-relaxed">
-                        Simply email us at <a href="mailto:support@reconx.com" class="text-blue-600 underline">support@reconx.com</a>.
+                        Simply email us at <a href="mailto:support@'{{ $globalSettings->company_name ?? config('app.name') }}'.com" class="text-blue-600 underline">support@ {{ $globalSettings->company_name ?? config('app.name') }}.com</a>.
                         Our response time is usually under 24 hours.
                     </p>
                 </details>
@@ -108,7 +108,7 @@
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Still Need Assistance?</h2>
             <p class="text-gray-500 mb-6">We’re happy to help. Reach out to our team directly.</p>
             <div class="flex justify-center gap-4">
-                <a href="mailto:support@reconx.com"
+                <a href="mailto:support@{{ $globalSettings->company_name ?? config('app.name') }}.com"
                    class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition">
                     <i class="fas fa-envelope mr-2"></i> Contact Support
                 </a>
@@ -121,7 +121,7 @@
 
         <!-- 🌐 Footer Info -->
         <div class="text-center text-gray-500 text-sm pb-6">
-            <p>© {{ date('Y') }} ReconX — All Rights Reserved.</p>
+            <p>© {{ date('Y') }} {{ $globalSettings->company_name ?? config('app.name') }} — All Rights Reserved.</p>
             <p>Built to simplify invoicing and business operations.</p>
         </div>
     </div>

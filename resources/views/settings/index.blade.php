@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Settings - ' . config('app.name', 'ReconX'))
+@section('title', 'Settings - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     @can('view', $setting)

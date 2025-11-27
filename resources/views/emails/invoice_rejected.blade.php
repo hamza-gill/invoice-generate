@@ -11,5 +11,5 @@
     @endcomponent
 
     Thanks,<br>
-    {{ config('app.name') }}
+    {{ ($globalSettings->company_name ?? config('app.name')) }}
 @endcomponent

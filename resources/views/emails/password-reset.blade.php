@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Reset - {{ config('app.name') }}</title>
+    <title>Password Reset - {{ $globalSettings->company_name ?? config('app.name') }}</title>
     <style>
         body {
             margin: 0;
@@ -83,23 +83,23 @@
     <div class="header">
         <i class="fas fa-exchange-alt"></i>
         <h1>Reset Your Password</h1>
-        <p style="color: rgba(255,255,255,0.8); font-size: 14px;">Secure access to your {{ config('app.name') }} account</p>
+        <p style="color: rgba(255,255,255,0.8); font-size: 14px;">Secure access to your {{ ($globalSettings->company_name ?? config('app.name')) }} account</p>
     </div>
 
     <div class="content">
         <h2>Hello, {{ $user->first_name ?? 'User' }} 👋</h2>
-        <p>We received a request to reset your password for your {{ config('app.name') }} account. Click the button below to set a new password:</p>
+        <p>We received a request to reset your password for your {{ ($globalSettings->company_name ?? config('app.name')) }} account. Click the button below to set a new password:</p>
 
         <a href="{{ $resetUrl }}" class="button">Reset Password</a>
 
         <p>If you didn’t request this, you can safely ignore this email. Your password won’t be changed until you click the button and set a new one.</p>
 
-        <p style="margin-top: 25px;">Thanks,<br><strong>The {{ config('app.name') }} Team</strong></p>
+        <p style="margin-top: 25px;">Thanks,<br><strong>The {{ ($globalSettings->company_name ?? config('app.name')) }} Team</strong></p>
     </div>
 
     <div class="footer">
-        <p>Need help? <a href="mailto:support@{{ strtolower(config('app.name')) }}.com">Contact Support</a></p>
-        <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+        <p>Need help? <a href="mailto:support@'{{ strtolower(config('app.name')) }}'.com">Contact Support</a></p>
+        <p>&copy; {{ date('Y') }} {{ ($globalSettings->company_name ?? config('app.name')) }}. All rights reserved.</p>
     </div>
 </div>
 </body>

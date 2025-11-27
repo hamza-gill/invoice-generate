@@ -24,8 +24,10 @@ class UserInvitationMail extends Mailable
     public function build()
     {
         $url = route('invitation.accept', $this->user->invitation_token);
-
-        return $this->subject('You are invited to join ReconX')
+        $companyName = config('settings.company_name')
+            ?? config('app.name')
+            ?? 'SUSAN W CASE INC';
+        return $this->subject("You are invited to join {$companyName}")
             ->view('emails.user_invitation', compact('url'));
     }
 }

@@ -98,7 +98,7 @@ class InvoiceResponseController extends Controller
         $rushEnabled = $request->has('rush_enabled_value') ? true : false;
         if ($rushEnabled) {
 
-            $rushFee = $rushEnabled ? ($invoice->rush_fee ?? 0) : 0;
+            $rushFee = $rushEnabled ? ($request->rush_fee ?? 0) : 0;
             $totalAmount = $totalAmount + $rushFee;
         }
 
@@ -138,7 +138,10 @@ class InvoiceResponseController extends Controller
             'payment_status'         => 'pending',
             'status'                 => 'pending',
             'amount'                 => $totalAmount,
-            'rush_enabled_value'     => $request->has('rush_enabled_value'),
+            'rush_enabled_value'     => $request->input('rush_enabled_value', 0),
+            'rush_description'       => $request->input('rush_label', null),
+            'rush_fee'               => $request->input('rush_fee', 0),
+            'rush_delivery_type'     => $request->input('rush_delivery_days', 'standard'),
         ]);
 
         $invoice->logActivity('proceed_payment', 'Customer proceeded to payment via Stripe checkout.');

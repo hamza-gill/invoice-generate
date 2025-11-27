@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'User Management - ReconX')
+@section('title', 'User Management -'.($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">

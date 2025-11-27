@@ -98,7 +98,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->first_name ?? 'John Doe' }}</p>
-                    <p class="text-xs text-gray-500">{{ Auth::user()->role ? 'Admin' : 'User' }}</p>
+                    <p class="text-xs text-gray-500">{{ Auth::user()->role ? Auth::user()->role : 'User' }}</p>
                 </div>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf

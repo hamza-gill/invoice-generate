@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Create Invoice - ReconX')
+@section('title', 'Create Invoice -',($globalSettings->company_name ?? config('app.name')))
 @php($hideNavbar = true)
 
 @section('content')

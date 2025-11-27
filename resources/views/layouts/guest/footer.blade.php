@@ -7,7 +7,7 @@
         @endphp
 
         {{ $startYear == $currentYear ? $currentYear : $startYear . '–' . $currentYear }}
-        {{ config('app.name', 'ReconX') }}. All rights reserved.
+        {{ ($globalSettings->company_name ?? config('app.name')) }}. All rights reserved.
     </p>
 </footer>
 

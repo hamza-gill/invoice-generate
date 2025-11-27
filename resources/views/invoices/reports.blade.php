@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'Invoice Reports - ReconX')
+@section('title', 'Invoice Reports -'.($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">

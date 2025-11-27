@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', $product->name . ' - ' . config('app.name', 'ReconX'))
+@section('title', $product->name . ' - ' . ($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <div class="w-full max-w-7xl mx-auto">
