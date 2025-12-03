@@ -53,7 +53,7 @@ class LoginService
 
             return [
                 'success' => false,
-                'errors' => ['error' => 'Login failed. Please try again later.']
+                'errors' => ['error' => 'Login failed. Please try again later.'.$e->getMessage()]
             ];
         }
     }
