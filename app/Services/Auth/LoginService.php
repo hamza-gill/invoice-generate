@@ -28,11 +28,10 @@ class LoginService
             if ($user->email_verified_at && $user->status == 'active') {
                 return [
                     'success' => true,
-                    'redirect_to' => route('admin.dashboard'),
+                    'redirect_to' => route('dashboard'),
                     'message' => 'Admin login successful.'
                 ];
             }
-
 
             // Unverified user
             return [
