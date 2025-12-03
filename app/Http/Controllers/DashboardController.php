@@ -26,14 +26,15 @@ class DashboardController extends Controller
 
             // ✅ Revenue Chart
             $revenueData = Invoice::select(
-                DB::raw('MONTHNAME(issue_date) as month'),
+                DB::raw('MONTH(issue_date) as month_number'),
+                DB::raw('MONTHNAME(issue_date) as month_name'),
                 DB::raw('SUM(amount) as total')
             )
-                ->groupBy('month')
-                ->orderBy(DB::raw('MONTH(issue_date)'))
+                ->groupBy('month_number', 'month_name')
+                ->orderBy('month_number')
                 ->get();
 
-            $chartLabels = $revenueData->pluck('month');
+            $chartLabels = $revenueData->pluck('month_name');
             $chartValues = $revenueData->pluck('total');
 
             // ✅ Invoice Status Distribution
@@ -74,4 +75,5 @@ class DashboardController extends Controller
             return back()->with('error', 'Failed to load dashboard data: ' . $e->getMessage());
         }
     }
+
 }
