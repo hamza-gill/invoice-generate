@@ -36,7 +36,7 @@ class AuthController extends Controller
     {
 
         $result = $loginService->authenticate($request);
-        dd($result);
+
         if ($result['success']) {
             return redirect()->intended($result['redirect_to'])->with('success', $result['message']);
         }

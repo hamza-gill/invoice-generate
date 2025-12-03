@@ -25,7 +25,7 @@ class LoginService
             $user = Auth::user();
 
             // Admin redirection
-            if ($user->is_admin && $user->status == 'active') {
+            if ($user->email_verified_at && $user->status == 'active') {
                 return [
                     'success' => true,
                     'redirect_to' => route('admin.dashboard'),
@@ -33,20 +33,12 @@ class LoginService
                 ];
             }
 
-            // Verified user
-            if ($user->userVerification && $user->userVerification->status === 'approved') {
-                return [
-                    'success' => true,
-                    'redirect_to' => route('dashboard'),
-                    'message' => 'Login successful.'
-                ];
-            }
 
             // Unverified user
             return [
                 'success' => true,
-                'redirect_to' => route('docs.verification'),
-                'message' => 'Please complete your ID verification.'
+                'redirect_to' => route('login'),
+                'message' => 'Please verify your email to login.'
             ];
 
         } catch (Exception $e) {
