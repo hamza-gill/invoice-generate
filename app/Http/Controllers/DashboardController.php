@@ -70,6 +70,7 @@ class DashboardController extends Controller
                 'recentCustomers'
             ));
         } catch (\Exception $e) {
+            dd($e);
             return back()->with('error', 'Failed to load dashboard data: ' . $e->getMessage());
         }
     }
