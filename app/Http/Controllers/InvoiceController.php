@@ -121,7 +121,7 @@ class InvoiceController extends Controller
             );
 
             // ✅ Send invoice email
-            SendInvoiceEmail::dispatch($invoice, '', '');
+            SendInvoiceEmail::dispatchSync($invoice, '', '');
 
             DB::commit();
 
