@@ -96,6 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/invite', [UserController::class, 'invite'])->name('users.invite');
     Route::put('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
+    Route::put('/users/{user}/revoke', [UserController::class, 'revoke'])->name('users.revoke');
 
 
     // AJAX product search and fetch

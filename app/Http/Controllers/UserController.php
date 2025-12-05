@@ -8,14 +8,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('created_at', 'desc')->latest()->paginate(10);
-        return view('users.index', compact('users'));
+        $users = User::paginate(10);
+        $roles = config('roles'); // get roles from config file
+
+        return view('users.index', compact('users', 'roles'));
     }
+
 
     public function invite(Request $request)
     {
@@ -45,17 +49,33 @@ class UserController extends Controller
         ]);
     }
 
+
     public function updateRole(Request $request, User $user)
     {
+        $roles = config('roles');
+
         $request->validate([
-            'role' => 'required|in:Admin,Manager,Staff',
+            'role' => ['required', Rule::in($roles)],
         ]);
 
-        $user->update(['role' => $request->role]);
+        $user->role = $request->role;
+        $user->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'User role updated successfully.',
+            'message' => 'User role updated successfully.'
         ]);
     }
+
+    public function revoke(User $user)
+    {
+        $user->status = 'inactive';
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User revoked successfully.'
+        ]);
+    }
+
 }
