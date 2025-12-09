@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceResponseController;
+use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
@@ -19,8 +20,6 @@ use Illuminate\Support\Facades\Route;
 | Guest Routes (only accessible when not logged in)
 |--------------------------------------------------------------------------
 */
-
-
 
 Route::middleware('guest')->group(function () {
 
@@ -139,6 +138,5 @@ Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken
 | Default / Landing Route
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+
+Route::get('/', [LandingPageController::class, 'index'])->name('landing');
