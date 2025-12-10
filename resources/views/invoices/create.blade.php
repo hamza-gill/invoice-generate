@@ -146,6 +146,7 @@
                     @if($globalSettings->hasRushDelivery())
                         <div class="bg-yellow-50 border border-yellow-300 rounded-2xl shadow-sm p-6">
                             <div class="flex items-start space-x-4">
+
                                 <div class="flex items-center h-5">
                                     <input type="checkbox"
                                            id="enable_rush_delivery"
@@ -154,6 +155,7 @@
                                            {{ old('enable_rush_delivery') ? 'checked' : '' }}
                                            class="w-5 h-5 text-yellow-600 bg-white border-gray-300 rounded focus:ring-yellow-500 focus:ring-2">
                                 </div>
+
                                 <div class="flex-1">
                                     <label for="enable_rush_delivery" class="font-semibold text-gray-800 cursor-pointer">
                                         <i class="fas fa-shipping-fast mr-2 text-yellow-600"></i>Enable Rush Delivery Options
@@ -164,20 +166,47 @@
                                     <div class="mt-3 p-3 bg-white rounded-lg border border-yellow-200">
                                         <p class="text-xs text-gray-700 font-medium mb-2">Available options:</p>
                                         <ul class="text-xs text-gray-600 space-y-1">
+
                                             @foreach ($globalSettings->rush_options as $option)
                                                 <li class="flex justify-between">
-                                                    <span>• {{ $option['label'] }}</span>
+                            <span>
+                                • {{ $option['label'] }}
+                                <br>
+                                <small class="text-gray-500">
+                                    Delivery by: <strong>
+                                        {{
+                                            // Start date = tomorrow
+                                            \Carbon\Carbon::today()->copy()->addWeekdays(1)
+                                                ->format('M d, Y')
+                                        }} - {{
+                                            // End date = start date + maxDays - 1
+                                            \Carbon\Carbon::today()->copy()->addWeekdays(
+                                                1 + (
+                                                    is_numeric($option['days'])
+                                                        ? (int)$option['days'] - 1
+                                                        : (preg_match('/^(\d+)-(\d+)$/', $option['days'], $m) ? (int)$m[2] - 1
+                                                            : ($option['days'] === 'standard' ? 7 - 1 : 0)
+                                                          )
+                                                )
+                                            )->format('M d, Y')
+                                        }}
+                                    </strong></small>
+                            </span>
                                                     <span class="font-semibold {{ $option['fee'] > 0 ? 'text-yellow-700' : 'text-green-600' }}">
-                                                        {{ $option['fee'] > 0 ? '+$' . number_format($option['fee'], 2) : 'FREE' }}
-                                                    </span>
+                                {{ $option['fee'] > 0 ? '+$' . number_format($option['fee'], 2) : 'FREE' }}
+                            </span>
                                                 </li>
                                             @endforeach
+
                                         </ul>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     @endif
+
+
 
                     {{-- LINE ITEMS --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">

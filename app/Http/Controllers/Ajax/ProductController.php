@@ -33,8 +33,7 @@ class ProductController extends Controller
             if ($request->filled('q')) {
                 $search = $request->get('q');
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('sku', 'like', "%{$search}%");
+                    $q->where('name', 'like', "%{$search}%");
                 });
             }
 
@@ -48,15 +47,15 @@ class ProductController extends Controller
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
-                        'sku' => $product->sku,
                         'price' => $product->price,
                         'stock' => $product->stock,
-                        'label' => "{$product->name} ({$product->sku}) - $ {$product->price}",
+                        'label' => "{$product->name} - $ {$product->price}",
                     ];
                 })
             ]);
         } catch (\Throwable $e) {
             Log::error('Error fetching products (AJAX): ' . $e->getMessage());
+
             return response()->json(['success' => false, 'error' => 'Unable to fetch products.'], 500);
         }
     }
@@ -74,7 +73,6 @@ class ProductController extends Controller
 
             if (!empty($search)) {
                 $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             }
 
