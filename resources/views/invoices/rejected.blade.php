@@ -59,18 +59,35 @@
                     <td class="p-3 text-right">${{ number_format($item->quantity * $item->amount, 2) }}</td>
                 </tr>
             @endforeach
+            @if ($invoice->rush_enabled_value)
+                <tr class="bg-yellow-50">
+                    <td class="p-3 font-medium">Rush Add-On ({{ ucfirst($invoice->rush_delivery_type) }})</td>
+                    <td class="p-3 text-center">1</td>
+                    <td class="p-3 text-right">${{ number_format($invoice->rush_fee, 2) }}</td>
+                    <td class="p-3 text-right">${{ number_format($invoice->rush_fee, 2) }}</td>
+                </tr>
+            @endif
             </tbody>
             @php
                 $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
+                $rushFee = ($invoice->rush_enabled_value) ? $invoice->rush_fee : 0;
+                $discount = $invoice->discount ?? 0;
+                $total = $subtotal + $rushFee - $discount;
             @endphp
             <tfoot class="bg-gray-100 font-semibold">
             <tr>
                 <td colspan="3" class="p-3 text-right">Subtotal:</td>
-                <td class="p-3 text-right">${{ number_format($subtotal, 2) }}</td>
+                <td class="p-3 text-right">${{ number_format($subtotal + $rushFee, 2) }}</td>
             </tr>
+            @if($discount > 0)
+                <tr>
+                    <td colspan="3" class="p-3 text-right text-red-600">Discount:</td>
+                    <td class="p-3 text-right text-red-600">-${{ number_format($discount, 2) }}</td>
+                </tr>
+            @endif
             <tr>
                 <td colspan="3" class="p-3 text-right">Total:</td>
-                <td class="p-3 text-right">${{ number_format($subtotal, 2) }}</td>
+                <td class="p-3 text-right">${{ number_format($total, 2) }}</td>
             </tr>
             </tfoot>
         </table>
