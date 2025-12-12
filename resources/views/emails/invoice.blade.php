@@ -29,6 +29,13 @@
 </p>
 
 {{-- Summary Table --}}
+@php
+    $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
+    $rushFee = $invoice->rush_enabled_value ? $invoice->rush_fee : 0;
+    $discount = $invoice->discount ?? 0;
+    $total = $subtotal + $rushFee - $discount;
+@endphp
+
 <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse: collapse; margin-bottom: 30px; border-radius: 8px; overflow: hidden;">
     <tr>
         <td style="padding: 12px 16px; background-color: #F9FAFB; border: 1px solid #E5E7EB; font-weight: 600; width: 40%;">Invoice Number</td>
@@ -48,7 +55,7 @@
     </tr>
     <tr>
         <td style="padding: 12px 16px; background-color: #F9FAFB; border: 1px solid #E5E7EB; font-weight: 600;">Total Amount</td>
-        <td style="padding: 12px 16px; border: 1px solid #E5E7EB; color: #047857; font-weight: bold;">${{ number_format($invoice->amount, 2) }}</td>
+        <td style="padding: 12px 16px; border: 1px solid #E5E7EB; color: #047857; font-weight: bold;">${{ number_format($total, 2) }}</td>
     </tr>
 </table>
 
@@ -70,10 +77,34 @@
                 <td style="padding: 10px; border: 1px solid #E5E7EB;">{{ $item->activity }}</td>
                 <td align="center" style="padding: 10px; border: 1px solid #E5E7EB;">{{ $item->quantity }}</td>
                 <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($item->amount, 2) }}</td>
-                <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($item->amount, 2) }}</td>
+                <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($item->quantity * $item->amount, 2) }}</td>
             </tr>
         @endforeach
+        @if($invoice->rush_enabled_value)
+            <tr>
+                <td style="padding: 10px; border: 1px solid #E5E7EB;">Rush Add-On ({{ ucfirst($invoice->rush_delivery_type) }})</td>
+                <td align="center" style="padding: 10px; border: 1px solid #E5E7EB;">1</td>
+                <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($invoice->rush_fee, 2) }}</td>
+                <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($invoice->rush_fee, 2) }}</td>
+            </tr>
+        @endif
         </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="3" align="right" style="padding: 10px; border: 1px solid #E5E7EB; font-weight: 600;">Subtotal</td>
+            <td align="right" style="padding: 10px; border: 1px solid #E5E7EB;">${{ number_format($subtotal + $rushFee, 2) }}</td>
+        </tr>
+        @if($discount > 0)
+            <tr>
+                <td colspan="3" align="right" style="padding: 10px; border: 1px solid #E5E7EB; font-weight: 600; color: #DC2626;">Discount</td>
+                <td align="right" style="padding: 10px; border: 1px solid #E5E7EB; color: #DC2626;">-${{ number_format($discount, 2) }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td colspan="3" align="right" style="padding: 10px; border: 1px solid #E5E7EB; font-weight: 600;">Total</td>
+            <td align="right" style="padding: 10px; border: 1px solid #E5E7EB; font-weight: 700; color: #047857;">${{ number_format($total, 2) }}</td>
+        </tr>
+        </tfoot>
     </table>
 @endif
 

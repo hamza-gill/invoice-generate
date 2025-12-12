@@ -84,10 +84,20 @@
         <h1>Hello {{ $invoice->customer->name ?? 'Customer' }},</h1>
         <p>We’ve generated your invoice <strong>#{{ $invoice->invoice_number }}</strong>.</p>
 
+        @php
+            $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
+            $rushFee = $invoice->rush_enabled_value ? $invoice->rush_fee : 0;
+            $discount = $invoice->discount ?? 0;
+            $total = $subtotal + $rushFee - $discount;
+        @endphp
+
         <div class="invoice-summary">
             <h3>Invoice Summary</h3>
-            <p><strong>Amount:</strong>
-                {{ $globalSettings->base_currency ?? '$' }}{{ number_format($invoice->amount, 2) }}</p>
+            <p><strong>Subtotal:</strong> {{ $globalSettings->base_currency ?? '$' }}{{ number_format($subtotal + $rushFee, 2) }}</p>
+            @if($discount > 0)
+                <p><strong>Discount:</strong> -{{ $globalSettings->base_currency ?? '$' }}{{ number_format($discount, 2) }}</p>
+            @endif
+            <p><strong>Total Amount:</strong> {{ $globalSettings->base_currency ?? '$' }}{{ number_format($total, 2) }}</p>
             <p><strong>Status:</strong> {{ ucfirst($invoice->status) }}</p>
             <p><strong>Due Date:</strong> {{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</p>
         </div>

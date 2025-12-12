@@ -31,6 +31,7 @@ class Invoice extends Model
         'rush_delivery_type',
         'rush_description',
         'rush_fee',
+        'discount',
         'rush_enabled_value'
     ];
 

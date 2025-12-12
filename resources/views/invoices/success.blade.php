@@ -25,7 +25,9 @@
                 ✅ Payment Successful
             </h1>
             <p class="text-gray-700 text-sm sm:text-base">Thank you for paying Invoice <strong>#{{ $invoice->invoice_number }}</strong>.</p>
-            <p class="text-gray-700 text-sm sm:text-base mt-1 font-semibold">Amount Paid: <strong>${{ number_format($invoice->amount, 2) }}</strong></p>
+            <p class="text-gray-700 text-sm sm:text-base mt-1 font-semibold">
+                Amount Paid: <strong>${{ number_format($invoice->amount, 2) }}</strong>
+            </p>
         </div>
 
         {{-- Invoice Details --}}
@@ -83,13 +85,20 @@
                     @php
                         $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
                         $rushFee = ($invoice->rush_enabled_value) ? $invoice->rush_fee : 0;
-                        $total = $subtotal + $rushFee;
+                        $discount = $invoice->discount ?? 0;
+                        $total = $subtotal + $rushFee - $discount;
                     @endphp
                     <tfoot class="bg-gray-100 font-semibold">
                     <tr>
                         <td colspan="3" class="p-3 text-right">Subtotal:</td>
                         <td class="p-3 text-right">${{ number_format($subtotal + $rushFee, 2) }}</td>
                     </tr>
+                    @if($discount > 0)
+                        <tr>
+                            <td colspan="3" class="p-3 text-right text-red-600">Discount:</td>
+                            <td class="p-3 text-right text-red-600">-${{ number_format($discount, 2) }}</td>
+                        </tr>
+                    @endif
                     <tr>
                         <td colspan="3" class="p-3 text-right">Total Paid:</td>
                         <td class="p-3 text-right">${{ number_format($total, 2) }}</td>

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Jobs\SendInvoiceEmail;
@@ -52,7 +53,7 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            //  Fetch or create customer
+            // Fetch or create customer
             $customer = Customer::updateOrCreate(
                 ['email' => $request->input('email')],
                 [
@@ -64,53 +65,64 @@ class InvoiceController extends Controller
                 ]
             );
 
-            //  Generate or use provided invoice number
+            // Generate or use provided invoice number
             $invoiceNumber = $request->input('invoice_number') ?: Invoice::consumeNextInvoiceNumber();
 
-            //  Calculate due date — 1 year after issue date
+            // Calculate due date — 1 year after issue date
             $issueDate = Carbon::parse($request->input('issue_date'));
             $dueDate = $issueDate->copy()->addYear();
 
-            //  Create invoice (excluding rush fee from total)
+            // Create invoice (excluding rush fee from total)
             $invoice = Invoice::create([
-                'user_id' => auth()->id(),
-                'customer_id' => $customer->id,
-                'invoice_number' => $invoiceNumber,
-                'description' => $request->input('description') ?? '',
-                'amount' => 0,
-                'status' => 'sent',
-                'issue_date' => $issueDate,
-                'due_date' => $dueDate,
-                'note' => $request->input('notes') ?? '',
-                'project_address' => $request->input('project_address') ?? '',
+                'user_id'             => auth()->id(),
+                'customer_id'         => $customer->id,
+                'invoice_number'      => $invoiceNumber,
+                'description'         => $request->input('description') ?? '',
+                'amount'              => 0, // will update later
+                'status'              => 'sent',
+                'issue_date'          => $issueDate,
+                'due_date'            => $dueDate,
+                'note'                => $request->input('notes') ?? '',
+                'project_address'     => $request->input('project_address') ?? '',
 
                 // Rush Add-On fields
-                'enable_rush_addon' => (bool) $request->input('enable_rush_addon', false),
-                'rush_delivery_type' => $request->input('rush_delivery_type'),
-                'rush_description' => $request->input('rush_description'),
-                'rush_fee' => $request->input('rush_fee'),
+                'enable_rush_addon'   => (bool) $request->input('enable_rush_addon', false),
+                'rush_delivery_type'  => $request->input('rush_delivery_type'),
+                'rush_description'    => $request->input('rush_description'),
+                'rush_fee'            => $request->input('rush_fee'),
+
+                // ✅ DISCOUNT field
+                'discount'            => $request->input('discount', 0),
             ]);
+
             $invoice->consumeNextInvoiceNumber();
-            //  Create line items & calculate subtotal
-            $totalAmount = 0;
+
+            // Create line items and calculate subtotal
+            $subtotal = 0;
             foreach ($request->input('line_items', []) as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price'];
 
                 $invoice->items()->create([
-                    'activity' => $item['description'],
+                    'activity'   => $item['description'],
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'amount' => $item['unit_price'],
-                    'total' => $lineTotal,
+                    'quantity'   => $item['quantity'],
+                    'amount'     => $item['unit_price'],
+                    'total'      => $lineTotal,
                 ]);
 
-                $totalAmount += $lineTotal;
+                $subtotal += $lineTotal;
             }
 
-            //  Update invoice total (rush fee excluded for now)
-            $invoice->update(['amount' => $totalAmount]);
+            // 🔥 Apply discount
+            $discount = floatval($request->input('discount', 0));
+            $finalAmount = max(0, $subtotal - $discount); // prevent negative
 
-            $invoice->logActivity( 'created',
+            // Update invoice total (rush fee excluded per your logic)
+            $invoice->update(['amount' => $finalAmount]);
+
+            // Log activity
+            $invoice->logActivity(
+                'created',
                 sprintf(
                     'Invoice #%s created by %s for customer %s, email sent to %s.',
                     $invoice->invoice_number,
@@ -120,7 +132,7 @@ class InvoiceController extends Controller
                 )
             );
 
-            // ✅ Send invoice email
+            // Send invoice email
             SendInvoiceEmail::dispatchSync($invoice, '', '');
 
             DB::commit();
@@ -137,6 +149,7 @@ class InvoiceController extends Controller
                 ->withErrors(['error' => 'Something went wrong while creating the invoice. Please try again.']);
         }
     }
+
 
 
 
@@ -368,6 +381,7 @@ class InvoiceController extends Controller
             return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
 
         } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate PDF: ' . $e->getMessage()

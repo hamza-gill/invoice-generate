@@ -16,7 +16,7 @@
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Review & Accept Invoice</h1>
             <p class="mt-1 text-gray-600 text-sm sm:text-base">Invoice #<strong>{{ $invoice->invoice_number }}</strong></p>
             <p class="mt-1 text-gray-700 font-semibold text-lg sm:text-xl">
-                Amount Due: ${{ number_format($invoice->items->sum(fn($item) => $item->quantity * $item->amount), 2) }}
+                Amount Due: ${{ number_format($invoice->items->sum(fn($item) => $item->quantity * $item->amount) - ($invoice->discount ?? 0), 2) }}
             </p>
         </div>
 
@@ -68,10 +68,16 @@
                     <td colspan="3" class="p-3 text-right text-yellow-700">Rush Add-On</td>
                     <td class="p-3 text-right text-yellow-700" id="rush-total">$0.00</td>
                 </tr>
+                <tr id="discount-row" class="@if(!$invoice->discount) hidden @endif">
+                    <td colspan="3" class="p-3 text-right text-red-600">Discount</td>
+                    <td class="p-3 text-right text-red-600" id="discount-total">
+                        ${{ number_format($invoice->discount ?? 0, 2) }}
+                    </td>
+                </tr>
                 <tr>
                     <td colspan="3" class="p-3 text-right">Total</td>
                     <td class="p-3 text-right" id="total-td">
-                        ${{ number_format($invoice->items->sum(fn($item) => $item->quantity * $item->amount), 2) }}
+                        ${{ number_format($invoice->items->sum(fn($item) => $item->quantity * $item->amount) + ($invoice->rush_fee ?? 0) - ($invoice->discount ?? 0), 2) }}
                     </td>
                 </tr>
                 </tfoot>
@@ -85,12 +91,33 @@
                 <p class="text-gray-700 mb-3">Select your preferred delivery speed:</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach ($globalSettings->rush_options as $option)
+                        @php
+
+                            $today = \Carbon\Carbon::today();
+                            $deliveryDate = $today->copy();
+
+                            if (is_numeric($option['days'])) {
+                                $addedDays = 0;
+                                while ($addedDays < $option['days']) {
+                                    $deliveryDate->addDay();
+                                    if (!$deliveryDate->isWeekend()) $addedDays++;
+                                }
+                            } else {
+                                // Standard: 5-7 business days, take 7
+                                $addedDays = 0;
+                                while ($addedDays < 7) {
+                                    $deliveryDate->addDay();
+                                    if (!$deliveryDate->isWeekend()) $addedDays++;
+                                }
+                            }
+                        @endphp
                         <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-yellow-100 transition">
                             <input type="radio"
                                    name="rush_option"
                                    value="{{ $option['days'] }}"
                                    data-fee="{{ $option['fee'] }}"
                                    data-label="{{ $option['label'] }}"
+                                   data-delivery="{{ $deliveryDate->format('M d, Y') }}"
                                    class="rush-option-radio mr-3"
                                    @if($option['days'] === 'standard') checked @endif>
                             <span class="font-medium text-gray-800 text-sm sm:text-base">
@@ -100,6 +127,10 @@
                                 @else
                                     (FREE)
                                 @endif
+                            <br>
+                            <span class="text-gray-600 text-xs">
+                                Delivery by: {{ $deliveryDate->format('M d, Y') }}
+                            </span>
                         </span>
                         </label>
                     @endforeach
@@ -146,6 +177,7 @@
             const rushTotalEl = document.getElementById('rush-total');
             const totalEl = document.getElementById('total-td');
             const subtotal = parseFloat(@json($invoice->items->sum(fn($i) => $i->quantity * $i->amount)));
+            const discount = parseFloat(@json($invoice->discount ?? 0));
 
             const rushValueInput = document.getElementById('rush_enabled_value');
             const rushDaysInput = document.getElementById('rush_delivery_days');
@@ -160,7 +192,10 @@
                     rushRow.classList.add('hidden');
                     rushTotalEl.textContent = '$0.00';
                 }
-                totalEl.textContent = '$' + (subtotal + fee).toFixed(2);
+
+                // Update total including discount
+                const total = subtotal + fee - discount;
+                totalEl.textContent = '$' + total.toFixed(2);
 
                 rushValueInput.value = fee > 0 ? 1 : 0;
                 rushDaysInput.value = days;
