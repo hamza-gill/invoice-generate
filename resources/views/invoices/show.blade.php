@@ -31,9 +31,11 @@
                     <i class="fas fa-envelope mr-2"></i>Send Email
                 </button>
 
-                <button id="downloadPdfBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                    <i class="fas fa-download mr-2"></i>Download PDF
-                </button>
+                    <button id="downloadPdfBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center">
+                        <i class="fas fa-download mr-2" id="downloadIcon"></i>
+                        <span id="downloadText">Download PDF</span>
+                    </button>
+
             </div>
         </div>
     </header>
@@ -316,37 +318,68 @@
                 if (!result.isConfirmed) return;
 
                 const btn = document.getElementById('downloadPdfBtn');
-                btn.disabled = true;
-                btn.textContent = 'Generating PDF...';
+                const icon = document.getElementById('downloadIcon');
+                const text = document.getElementById('downloadText');
 
-                fetch('{{ route("invoices.download", $invoice->id) }}', {
+                // Disable button and show loader
+                btn.disabled = true;
+                icon.className = 'fas fa-spinner fa-spin mr-2'; // spinning icon
+                text.innerText = 'Generating PDF...';
+
+                fetch('{{ route("invoices.downloads", $invoice->id) }}', {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
+                    },
+                    credentials: 'same-origin'
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const link = document.createElement('a');
-                            link.href = 'data:application/pdf;base64,' + data.fileData;
-                            link.download = data.fileName;
-                            link.click();
-                            Swal.fire('Success!', data.message, 'success');
-                        } else {
-                            Swal.fire('Failed!', data.message || 'Failed to generate PDF.', 'error');
-                        }
+                    .then(res => {
+                        if (!res.ok) throw new Error('Server error');
+                        return res.json();
                     })
-                    .catch(() => {
-                        Swal.fire('Error', 'Error generating PDF. Please try again.', 'error');
+                    .then(data => {
+                        if (!data.success) {
+                            Swal.fire('Failed!', data.message || 'Failed to generate PDF.', 'error');
+                            return;
+                        }
+
+                        // Convert base64 → Blob
+                        const byteCharacters = atob(data.fileData);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+                        // Trigger download
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = data.fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+
+                        Swal.fire('Success!', 'PDF downloaded successfully.', 'success');
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        Swal.fire('Error', 'Failed to prepare PDF. Make sure you are logged in.', 'error');
                     })
                     .finally(() => {
+                        // Reset button state
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-download mr-2"></i>Download PDF';
+                        icon.className = 'fas fa-download mr-2'; // restore download icon
+                        text.innerText = 'Download PDF';
                     });
             });
         });
+
     </script>
 
 @endsection

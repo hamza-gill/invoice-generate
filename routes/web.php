@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
         Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
-
+        Route::get('/{invoice}/downloads', [InvoiceController::class, 'downloadPdf'])->name('downloads');
         Route::get('/{id}/send', [InvoiceController::class, 'sendInvoiceEmail'])->name('sendEmail');       // Send email
         Route::post('/{invoice}/void', [InvoiceController::class, 'void'])->name('void');
     });

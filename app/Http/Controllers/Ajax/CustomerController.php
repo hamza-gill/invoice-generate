@@ -38,6 +38,8 @@ class CustomerController extends Controller
                     'address' => $c->address,
                     'city' => $c->city,
                     'country' => $c->country,
+                    'state' => $c->state,
+                    'postal_code' => $c->postal_code,
                 ];
             });
 

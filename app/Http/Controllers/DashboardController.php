@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Customer;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class DashboardController extends Controller
             // ✅ Stats
             $totalInvoices = Invoice::count();
             $totalPayments = Invoice::where('status', 'paid')->count();
-            $unmatchedPayments = Invoice::where('status', 'unpaid')->count();
+            $unmatchedPayments = Invoice::where('status', 'sent')->count();
 
             // ✅ Monthly Revenue
             $monthlyRevenue = Invoice::where('status', 'paid')
@@ -40,13 +41,12 @@ class DashboardController extends Controller
             // ✅ Invoice Status Distribution
             $paidCount = Invoice::where('status', 'paid')->count();
             $pendingCount = Invoice::where('status', 'sent')->count();
-            $overdueCount = Invoice::where('status', 'overdue')->count();
+            $today = Carbon::today();
+
+            $overdueCount = Invoice::where('status', 'sent')->whereDate('due_date', '<', $today)->count();
 
             // ✅ New Sections
-            $recentInvoices = Invoice::with('customer')
-                ->latest()
-                ->take(5)
-                ->get();
+            $recentInvoices = Invoice::with('customer')->latest()->take(5)->get();
 
             $recentPaidInvoices = Invoice::with('customer')
                 ->where('status', 'paid')
