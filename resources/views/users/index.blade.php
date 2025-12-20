@@ -113,10 +113,16 @@
             document.getElementById('inviteModal').classList.add('hidden');
 
         // Submit Invite Form
+        // Submit Invite Form
         document.getElementById('inviteForm').onsubmit = function(e) {
             e.preventDefault();
 
+            const submitButton = this.querySelector('button[type="submit"]');
             const formData = new FormData(this);
+
+            // Disable submit button and show loader
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<span class="loader mr-2"></span>Sending...`;
 
             fetch('{{ route("users.invite") }}', {
                 method: 'POST',
@@ -134,9 +140,27 @@
                         timer: 2000,
                         showConfirmButton: false
                     });
-                    if (data.success) location.reload();
+
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        // Re-enable submit if failed
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Send Invite';
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Something went wrong!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Send Invite';
                 });
         };
+
 
         // Update Role
         document.querySelectorAll('.roleSelect').forEach(select => {
