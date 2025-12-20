@@ -62,6 +62,8 @@ class InvoiceController extends Controller
                     'company_name' => $request->input('company_name'),
                     'city' => $request->input('city'),
                     'country' => 'USA',
+                    'state' => $request->input('state'),
+                    'postal_code' => $request->input('postal_code'),
                 ]
             );
 
@@ -355,39 +357,41 @@ class InvoiceController extends Controller
 
     public function downloadPdf(Invoice $invoice, Request $request)
     {
-
         try {
 
-            // Generate PDF from the invoice Blade view
             $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+
             $invoice->logActivity(
                 'downloaded',
                 'Invoice PDF downloaded by ' . (auth()->user()->name ?? 'Guest') . '.'
             );
-            // If AJAX request, return base64-encoded PDF
-            if ($request->ajax()) {
-                $pdfContent = $pdf->output();
-                $fileName = 'invoice-' . $invoice->invoice_number . '.pdf';
 
+            // AJAX → return base64
+            if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'fileName' => $fileName,
-                    'fileData' => base64_encode($pdfContent),
+                    'fileName' => 'invoice-' . $invoice->invoice_number . '.pdf',
+                    'fileData' => base64_encode($pdf->output()),
                     'message' => 'Invoice PDF generated successfully.'
                 ]);
             }
 
-            // Otherwise, normal download
+            // Normal download (if someone opens URL directly)
             return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
 
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to download this invoice.'
+            ], 403);
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate PDF: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * Send invoice email with PDF attachment.

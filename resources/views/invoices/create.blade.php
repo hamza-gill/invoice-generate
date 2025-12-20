@@ -83,6 +83,16 @@
                                 <input type="text" id="customer_city" name="city"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                                <input type="text" id="customer_state" name="state"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Zip Code *</label>
+                                <input type="text" id="customer_postal_code" name="postal_code"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
                         </div>
                     </div>
 
@@ -114,7 +124,7 @@
                                        name="invoice_number"
                                        value="{{ old('invoice_number', $globalSettings->starting_invoice_number ?? '') }}"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                                       readonly
+
                                        required>
                             </div>
 
@@ -299,6 +309,7 @@
                     delay: 250,
                     processResults: function (response) {
                         if (response.success) {
+                            console.log(response.data)
                             return {
                                 results: response.data.map(c => ({
                                     id: c.id,
@@ -309,6 +320,8 @@
                                     city: c.city,
                                     company_name: c.company_name,
                                     country: c.country,
+                                    postal_code: c.postal_code,
+                                    state: c.state,
                                 }))
                             };
                         }
@@ -325,6 +338,9 @@
                 $('#customer_email').val(data.email);
                 $('#customer_address').val(data.address);
                 $('#customer_city').val(data.city);
+                $('#customer_state').val(data.state);
+                $('#customer_postal_code').val(data.postal_code);
+                console.log(data)
             });
 
             // LINE ITEMS
@@ -451,21 +467,30 @@
 
         // Google Places Autocomplete
         function initAutocomplete() {
-            const input = document.getElementById("project_address");
-            if (!input) return;
 
-            const autocomplete = new google.maps.places.Autocomplete(input, {
-                types: ['address'],
-                componentRestrictions: { country: 'us' },
-                fields: ['formatted_address']
-            });
+            function attachAutocomplete(inputId) {
+                const input = document.getElementById(inputId);
+                if (!input) return;
 
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                if (place && place.formatted_address) {
-                    input.value = place.formatted_address;
-                }
-            });
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'us' },
+                    fields: ['formatted_address']
+                });
+
+                autocomplete.addListener('place_changed', function () {
+                    const place = autocomplete.getPlace();
+                    if (place && place.formatted_address) {
+                        input.value = place.formatted_address;
+                    }
+                });
+            }
+
+            // Project Address
+            attachAutocomplete('project_address');
+
+            // Customer Address
+            attachAutocomplete('customer_address');
         }
     </script>
 
