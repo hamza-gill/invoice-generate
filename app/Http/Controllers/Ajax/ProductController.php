@@ -143,9 +143,9 @@ class ProductController extends Controller
                 Product::updateOrCreate(
                     ['name' => trim($data['productservice_name'])],
                     [
-                        'description' => $data['sales_description']  ?? null,
-                        'price' => $data['price'] ?? null,
-                        'category' => $data['category'] ?? null,
+                        'description' => $data['sales_description']  ?? '',
+                        'price' => $data['price'] ?? 0,
+                        'category' => $data['category'] ?? '',
                     ]
                 );
 
