@@ -12,7 +12,7 @@ class UserPolicy
     public function viewAny(User $user)
     {
         // Only admin and developer can manage users
-        return in_array($user->role, ['admin', 'developer']);
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
 
     /**
@@ -20,7 +20,7 @@ class UserPolicy
      */
     public function view(User $user, User $model)
     {
-        return in_array($user->role, ['admin', 'developer']);
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
 
     /**
@@ -28,15 +28,17 @@ class UserPolicy
      */
     public function create(User $user)
     {
-        return in_array($user->role, ['admin', 'developer']);
+        // Convert role to lowercase to match stored roles
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
+
 
     /**
      * Determine if the user can update a user.
      */
     public function update(User $user, User $model)
     {
-        return in_array($user->role, ['admin', 'developer']);
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
 
     /**
@@ -48,7 +50,7 @@ class UserPolicy
         if ($user->id === $model->id) {
             return false;
         }
-        return in_array($user->role, ['admin', 'developer']);
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
 
     /**
@@ -56,7 +58,7 @@ class UserPolicy
      */
     public function restore(User $user, User $model)
     {
-        return in_array($user->role, ['admin', 'developer']);
+        return in_array(strtolower($user->role), ['admin', 'developer']);
     }
 
     /**

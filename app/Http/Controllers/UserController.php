@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -23,17 +24,18 @@ class UserController extends Controller
 
     public function invite(Request $request)
     {
-        $this->authorize('create', User::class);
+
         $request->validate([
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:Admin,Manager,Staff',
+            'role' => 'required|in:admin,manager,staff',
         ]);
 
         $token = Str::random(40);
+        $role = strtolower($request->role);
 
         $user = User::create([
             'email' => $request->email,
-            'role' => $request->role,
+            'role' => $role,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'invitation_token' => $token,
@@ -46,7 +48,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Invitation sent successfully!',
+            'message' => 'Invitation sent successfully!'
         ]);
     }
 
