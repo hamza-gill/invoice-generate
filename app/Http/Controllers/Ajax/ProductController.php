@@ -143,8 +143,8 @@ class ProductController extends Controller
                 Product::updateOrCreate(
                     ['name' => trim($data['productservice_name'])],
                     [
-                        'description' => $data['sales_description']  ?? '',
-                        'price' => $data['price'] ?? 0,
+                        'description' => $data['sales_description'] ?? '',
+                        'price' => isset($data['price']) && trim($data['price']) !== '' ? $data['price'] : 0,
                         'category' => $data['category'] ?? '',
                     ]
                 );
