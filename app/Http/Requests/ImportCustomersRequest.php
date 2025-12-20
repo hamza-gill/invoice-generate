@@ -14,7 +14,7 @@ class ImportCustomersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:csv,txt|max:10456',
+            'file' => 'required|file|mimes:csv,txt,xlsx|max:10456',
         ];
     }
 
