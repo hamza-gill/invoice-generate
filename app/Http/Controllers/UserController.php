@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -15,8 +14,6 @@ class UserController extends Controller
 {
     public function index()
     {
-        $this->authorize('view', User::class);
-
         $users = User::paginate(10);
         $roles = config('roles'); // get roles from config file
 
@@ -24,17 +21,14 @@ class UserController extends Controller
     }
 
 
-    /**
-     * @throws AuthorizationException
-     */
     public function invite(Request $request)
     {
-
+        $this->authorize('create', User::class);
         $request->validate([
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:Admin,Manager,Staff',
         ]);
-        $this->authorize('create', User::class);
+
         $token = Str::random(40);
 
         $user = User::create([
@@ -59,7 +53,6 @@ class UserController extends Controller
 
     public function updateRole(Request $request, User $user)
     {
-        $this->authorize('update', User::class);
         $roles = config('roles');
 
         $request->validate([
@@ -77,7 +70,6 @@ class UserController extends Controller
 
     public function revoke(User $user)
     {
-        $this->authorize('delete', User::class);
         $user->status = 'inactive';
         $user->save();
 
