@@ -79,8 +79,9 @@
                 <h2 class="text-lg font-semibold mb-4">Import Customers (CSV)</h2>
                 <form action="{{ route('customers.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    <input type="file" name="file" accept=".csv" required
+                    <input type="file" name="file" accept=".csv, .xlsx,.xls" required
                            class="w-full border rounded-lg p-2 mb-4">
+
                     <div class="flex justify-end space-x-2">
                         <button type="button" id="closeImportModal"
                                 class="px-4 py-2 border rounded-lg hover:bg-gray-100">
