@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/{invoice}/edit', [InvoiceController::class, 'edit'])->name('edit');
         Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('update');
         Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])->name('destroy');
-
+        Route::get('/{invoice}/downloads', [InvoiceController::class, 'downloadPdf'])->name('downloads');
         Route::get('/{id}/send', [InvoiceController::class, 'sendInvoiceEmail'])->name('sendEmail');       // Send email
         Route::post('/{invoice}/void', [InvoiceController::class, 'void'])->name('void');
     });
@@ -96,6 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/invite', [UserController::class, 'invite'])->name('users.invite');
     Route::put('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
+    Route::put('/users/{user}/revoke', [UserController::class, 'revoke'])->name('users.revoke');
 
 
     // AJAX product search and fetch

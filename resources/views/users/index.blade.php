@@ -1,6 +1,6 @@
 @extends('layouts.auth.app')
 
-@section('title', 'User Management -'.($globalSettings->company_name ?? config('app.name')))
+@section('title', 'User Management - '.($globalSettings->company_name ?? config('app.name')))
 
 @section('content')
     <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
@@ -23,42 +23,58 @@
                     <th class="text-right py-3">Actions</th>
                 </tr>
                 </thead>
+
                 <tbody>
                 @foreach($users as $user)
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3">{{ $user->first_name ?? '—' }}</td>
                         <td class="py-3">{{ $user->last_name ?? '—' }}</td>
                         <td class="py-3">{{ $user->email }}</td>
+
                         <td class="py-3">
                             <select data-id="{{ $user->id }}" class="roleSelect border rounded p-1 text-sm">
-                                <option value="Admin" {{ $user->role === 'Admin' ? 'selected' : '' }}>Admin</option>
-                                <option value="Manager" {{ $user->role === 'Manager' ? 'selected' : '' }}>Manager</option>
-                                <option value="Staff" {{ $user->role === 'Staff' ? 'selected' : '' }}>Staff</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role }}" {{ $user->role === $role ? 'selected' : '' }}>
+                                        {{ ucfirst($role) }}
+                                    </option>
+                                @endforeach
                             </select>
                         </td>
+
                         <td class="py-3">
-                            @if($user->is_active)
+                            @if($user->status == 'active')
                                 <span class="bg-green-100 text-green-700 px-2 py-1 text-xs rounded">Active</span>
                             @else
                                 <span class="bg-gray-100 text-gray-600 px-2 py-1 text-xs rounded">Pending</span>
                             @endif
                         </td>
-                        <td class="py-3 text-right">
+
+                        <td class="py-3 text-right space-x-3">
                             <button class="text-blue-600 hover:text-blue-800 text-sm">View</button>
+
+                            <!-- Revoke Button -->
+                            <button class="text-red-600 hover:text-red-800 text-sm revokeBtn"
+                                    data-id="{{ $user->id }}">
+                                Revoke
+                            </button>
                         </td>
                     </tr>
                 @endforeach
                 </tbody>
+
             </table>
         </div>
     </main>
+
     <div class="mt-8 flex justify-center">
         {{ $users->links('components.pagination') }}
     </div>
+
     <!-- Invite Modal -->
     <div id="inviteModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
         <div class="bg-white p-6 rounded-xl w-96 shadow-lg">
             <h3 class="text-lg font-bold mb-4">Invite New User</h3>
+
             <form id="inviteForm">
                 @csrf
 
@@ -73,9 +89,9 @@
 
                 <label class="block text-sm mb-2">Role</label>
                 <select name="role" required class="w-full border rounded p-2 mb-4">
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Staff" selected>Staff</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role }}">{{ ucfirst($role) }}</option>
+                    @endforeach
                 </select>
 
                 <div class="flex justify-end space-x-3">
@@ -87,6 +103,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         // Open/Close modal
         document.getElementById('inviteUserBtn').onclick = () =>
@@ -95,26 +112,19 @@
         document.getElementById('closeModalBtn').onclick = () =>
             document.getElementById('inviteModal').classList.add('hidden');
 
-        // Handle form submit (invite)
+        // Submit Invite Form
         document.getElementById('inviteForm').onsubmit = function(e) {
             e.preventDefault();
 
             const formData = new FormData(this);
-            const data = {
-                first_name: formData.get('first_name'),
-                last_name: formData.get('last_name'),
-                email: formData.get('email'),
-                role: formData.get('role'),
-            };
 
             fetch('{{ route("users.invite") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(Object.fromEntries(formData))
             })
                 .then(res => res.json())
                 .then(data => {
@@ -125,20 +135,13 @@
                         showConfirmButton: false
                     });
                     if (data.success) location.reload();
-                })
-                .catch(err => {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Something went wrong!',
-                        text: err.message
-                    });
                 });
         };
 
-        // Update role via AJAX
+        // Update Role
         document.querySelectorAll('.roleSelect').forEach(select => {
             select.addEventListener('change', e => {
-                const id = e.target.getAttribute('data-id');
+                const id = e.target.dataset.id;
                 const role = e.target.value;
 
                 fetch(`/users/${id}/role`, {
@@ -154,11 +157,48 @@
                         Swal.fire({
                             icon: data.success ? 'success' : 'error',
                             title: data.message,
-                            timer: 2000,
+                            timer: 1500,
                             showConfirmButton: false
                         });
                     });
             });
         });
+
+        // Revoke User
+        document.querySelectorAll('.revokeBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const userId = btn.dataset.id;
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This will deactivate the user!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, revoke"
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        fetch(`/users/${userId}/revoke`, {
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                Swal.fire({
+                                    icon: data.success ? 'success' : 'error',
+                                    title: data.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                if (data.success) location.reload();
+                            });
+                    }
+                });
+            });
+        });
+
     </script>
+
 @endsection

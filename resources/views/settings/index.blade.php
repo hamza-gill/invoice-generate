@@ -219,7 +219,7 @@
                                         : '';
 
                                     // Mask Webhook URL (for ALL users)
-                                    $webhookUrl = $setting->webhook_url ?? '';
+                                    $webhookUrl = $webhookUrl  ?? '';
                                     $maskedWebhookUrl = $webhookUrl
                                         ? str_repeat('*', max(0, strlen($webhookUrl) - 4)) . substr($webhookUrl, -4)
                                         : '';
@@ -303,7 +303,7 @@
                                                     id="toggleWebhookUrl"
                                                     data-full-key="{{ $webhookUrl }}"
                                                     class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
-                                                <i class="fas fa-eye"></i>
+                                                <i class="fas fa-eye" id="toggleIcon"></i>
                                             </button>
                                         @endif
 
@@ -315,6 +315,7 @@
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
+
 
                                 <!-- Webhook Secret -->
                                 <div>

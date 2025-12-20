@@ -208,11 +208,18 @@
         $currency = $globalSettings->base_currency ?? '$';
         $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
         $rushFee = $invoice->rush_enabled_value ? ($invoice->rush_fee ?? 0) : 0;
+
+        $discount = $invoice->discount ?? 0;
+
         $taxRate = (!empty($globalSettings->enable_tax) && $globalSettings->enable_tax)
                     ? ($globalSettings->tax_percentage ?? 0) / 100
                     : 0;
+
+        // Tax is calculated BEFORE discount (standard)
         $taxAmount = ($subtotal + $rushFee) * $taxRate;
-        $total = $subtotal + $rushFee + $taxAmount;
+
+        // Final total (discount applied at end)
+        $total = max(0, $subtotal + $rushFee + $taxAmount - $discount);
     @endphp
 
     <table class="items">
@@ -252,16 +259,23 @@
             </div>
 
             @if($invoice->rush_enabled_value)
-                <div class="totals-row font-semibold bg-yellow-50">
-                    <span>Rush Add-On ({{ ucfirst($invoice->rush_delivery_type) ?? 'Fast' }}):</span>
+                <div class="totals-row font-semibold">
+                    <span>Rush Add-On ({{ ucfirst($invoice->rush_delivery_type) }}):</span>
                     <span>{{ $currency }}{{ number_format($rushFee, 2) }}</span>
                 </div>
             @endif
 
-            @if(!empty($globalSettings->enable_tax) && $globalSettings->enable_tax)
+            @if($globalSettings->enable_tax)
                 <div class="totals-row">
-                    <span><strong>Tax ({{ $globalSettings->tax_percentage ?? 0 }}%):</strong></span>
+                    <span><strong>Tax ({{ $globalSettings->tax_percentage }}%):</strong></span>
                     <span>{{ $currency }}{{ number_format($taxAmount, 2) }}</span>
+                </div>
+            @endif
+
+            @if($discount > 0)
+                <div class="totals-row" style="color:#b91c1c;font-weight:600;">
+                    <span>Discount:</span>
+                    <span>-{{ $currency }}{{ number_format($discount, 2) }}</span>
                 </div>
             @endif
 

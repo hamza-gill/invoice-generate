@@ -83,6 +83,16 @@
                                 <input type="text" id="customer_city" name="city"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                                <input type="text" id="customer_state" name="state"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Zip Code *</label>
+                                <input type="text" id="customer_postal_code" name="postal_code"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
                         </div>
                     </div>
 
@@ -114,7 +124,7 @@
                                        name="invoice_number"
                                        value="{{ old('invoice_number', $globalSettings->starting_invoice_number ?? '') }}"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                                       readonly
+
                                        required>
                             </div>
 
@@ -142,7 +152,7 @@
                         </div>
                     </div>
 
-                    {{-- RUSH DELIVERY ENABLE (SIMPLE CHECKBOX) --}}
+                    {{-- RUSH DELIVERY ENABLE --}}
                     @if($globalSettings->hasRushDelivery())
                         <div class="bg-yellow-50 border border-yellow-300 rounded-2xl shadow-sm p-6">
                             <div class="flex items-start space-x-4">
@@ -166,38 +176,33 @@
                                     <div class="mt-3 p-3 bg-white rounded-lg border border-yellow-200">
                                         <p class="text-xs text-gray-700 font-medium mb-2">Available options:</p>
                                         <ul class="text-xs text-gray-600 space-y-1">
-
                                             @foreach ($globalSettings->rush_options as $option)
                                                 <li class="flex justify-between">
-                            <span>
-                                • {{ $option['label'] }}
-                                <br>
-                                <small class="text-gray-500">
-                                    Delivery by: <strong>
-                                        {{
-                                            // Start date = tomorrow
-                                            \Carbon\Carbon::today()->copy()->addWeekdays(1)
-                                                ->format('M d, Y')
-                                        }} - {{
-                                            // End date = start date + maxDays - 1
-                                            \Carbon\Carbon::today()->copy()->addWeekdays(
-                                                1 + (
-                                                    is_numeric($option['days'])
-                                                        ? (int)$option['days'] - 1
-                                                        : (preg_match('/^(\d+)-(\d+)$/', $option['days'], $m) ? (int)$m[2] - 1
-                                                            : ($option['days'] === 'standard' ? 7 - 1 : 0)
-                                                          )
-                                                )
-                                            )->format('M d, Y')
-                                        }}
-                                    </strong></small>
-                            </span>
+                                                    <span>
+                                                        • {{ $option['label'] }}<br>
+                                                        <small class="text-gray-500">
+                                                            Delivery by:
+                                                            <strong>
+
+                                                                {{
+                                                                    \Carbon\Carbon::today()->copy()->addWeekdays(
+                                                                        1 + (
+                                                                            is_numeric($option['days'])
+                                                                                ? (int)$option['days'] - 1
+                                                                                : (preg_match('/^(\d+)-(\d+)$/', $option['days'], $m) ? (int)$m[2] - 1
+                                                                                    : ($option['days'] === 'standard' ? 7 - 1 : 0)
+                                                                                  )
+                                                                        )
+                                                                    )->format('M d, Y')
+                                                                }}
+                                                            </strong>
+                                                        </small>
+                                                    </span>
                                                     <span class="font-semibold {{ $option['fee'] > 0 ? 'text-yellow-700' : 'text-green-600' }}">
-                                {{ $option['fee'] > 0 ? '+$' . number_format($option['fee'], 2) : 'FREE' }}
-                            </span>
+                                                        {{ $option['fee'] > 0 ? '+$' . number_format($option['fee'], 2) : 'FREE' }}
+                                                    </span>
                                                 </li>
                                             @endforeach
-
                                         </ul>
                                     </div>
                                 </div>
@@ -205,8 +210,6 @@
                             </div>
                         </div>
                     @endif
-
-
 
                     {{-- LINE ITEMS --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -221,6 +224,18 @@
                         <div id="lineItemsContainer" class="space-y-4"></div>
 
                         <div class="mt-6 pt-6 border-t border-gray-200">
+
+                            {{-- DISCOUNT FIELD --}}
+                            <div class="flex justify-end mb-4">
+                                <div class="w-64 text-md text-gray-800">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Discount ($)</label>
+                                    <input type="number" step="0.01" id="discount" name="discount"
+                                           value="0"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-right">
+                                </div>
+                            </div>
+
+                            {{-- TOTAL --}}
                             <div class="flex justify-end">
                                 <div class="w-64 text-lg font-semibold text-gray-800 flex justify-between">
                                     <span>Total:</span>
@@ -285,7 +300,7 @@
 
     <script>
         $(document).ready(function () {
-            // ✅ Customer Select2
+            // CUSTOMER Select2
             $('#customerSelect').select2({
                 placeholder: 'Search customer...',
                 ajax: {
@@ -294,6 +309,7 @@
                     delay: 250,
                     processResults: function (response) {
                         if (response.success) {
+                            console.log(response.data)
                             return {
                                 results: response.data.map(c => ({
                                     id: c.id,
@@ -304,6 +320,8 @@
                                     city: c.city,
                                     company_name: c.company_name,
                                     country: c.country,
+                                    postal_code: c.postal_code,
+                                    state: c.state,
                                 }))
                             };
                         }
@@ -320,43 +338,61 @@
                 $('#customer_email').val(data.email);
                 $('#customer_address').val(data.address);
                 $('#customer_city').val(data.city);
+                $('#customer_state').val(data.state);
+                $('#customer_postal_code').val(data.postal_code);
+                console.log(data)
             });
 
-            // ✅ Line Items Logic
+            // LINE ITEMS
             const container = document.getElementById('lineItemsContainer');
             const addBtn = document.getElementById('addLineItem');
             const totalDisplay = document.getElementById('totalAmount');
 
             function updateTotal() {
                 let total = 0;
+
                 document.querySelectorAll('.line-total').forEach(el => {
                     total += parseFloat(el.dataset.value || 0);
                 });
 
-                totalDisplay.textContent = `$${total.toFixed(2)}`;
+                const discount = parseFloat(document.getElementById('discount')?.value || 0);
+                let finalTotal = total - discount;
+
+                if (finalTotal < 0) finalTotal = 0;
+
+                totalDisplay.textContent = `$${finalTotal.toFixed(2)}`;
             }
 
             function addLineItem() {
                 const index = container.children.length;
+
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-12 gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200';
+
                 row.innerHTML = `
                     <div class="col-span-8">
                         <select class="product-select w-full border border-gray-300 rounded-lg"></select>
                     </div>
+
                     <div class="col-span-3">
-                        <input type="text" class="line-total w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-right font-semibold text-gray-800" value="$0.00" readonly data-value="0">
+                        <input type="text"
+                               class="line-total w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-right font-semibold text-gray-800"
+                               value="$0.00"
+                               readonly data-value="0">
                     </div>
+
                     <div class="col-span-1 text-center">
                         <button type="button" class="remove-line text-red-500 hover:text-red-700">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
+
                     <input type="hidden" name="line_items[${index}][product_id]" class="line-product-id">
                     <input type="hidden" name="line_items[${index}][quantity]" value="1" class="line-quantity">
                     <input type="hidden" name="line_items[${index}][unit_price]" value="0" class="line-price">
                     <input type="hidden" name="line_items[${index}][description]" class="line-description">
                 `;
+
                 container.appendChild(row);
 
                 const qty = row.querySelector('.line-quantity');
@@ -394,6 +430,7 @@
 
                 $(productSelect).on('select2:select', function (e) {
                     const data = e.params.data;
+
                     if (data.id === 'other') {
                         desc.value = '';
                         price.value = '0';
@@ -405,9 +442,11 @@
                         productId.value = data.id;
                         desc.setAttribute('readonly', true);
                     }
+
                     const lineTotal = parseFloat(qty.value) * parseFloat(price.value);
                     total.value = `$${lineTotal.toFixed(2)}`;
                     total.dataset.value = lineTotal;
+
                     updateTotal();
                 });
 
@@ -421,28 +460,39 @@
 
             addBtn.addEventListener('click', addLineItem);
 
-            // Initial update
+            document.getElementById('discount').addEventListener('input', updateTotal);
+
             updateTotal();
         });
 
-        // ✅ Google Places Autocomplete
+        // Google Places Autocomplete
         function initAutocomplete() {
-            const input = document.getElementById("project_address");
-            if (!input) return;
-            const autocomplete = new google.maps.places.Autocomplete(input, {
-                types: ['address'],
-                componentRestrictions: { country: 'us' },
-                fields: ['formatted_address']
-            });
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                if (place && place.formatted_address) {
-                    input.value = place.formatted_address;
-                }
-            });
+
+            function attachAutocomplete(inputId) {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'us' },
+                    fields: ['formatted_address']
+                });
+
+                autocomplete.addListener('place_changed', function () {
+                    const place = autocomplete.getPlace();
+                    if (place && place.formatted_address) {
+                        input.value = place.formatted_address;
+                    }
+                });
+            }
+
+            // Project Address
+            attachAutocomplete('project_address');
+
+            // Customer Address
+            attachAutocomplete('customer_address');
         }
     </script>
 
-    {{-- Google Places --}}
     <script src="https://maps.googleapis.com/maps/api/js?key={{$globalSettings->google_places_key}}&libraries=places&callback=initAutocomplete" async defer></script>
 @endsection

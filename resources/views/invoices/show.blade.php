@@ -23,7 +23,6 @@
                     </button>
                 @endif
 
-                <!-- ⭐ ADDED: Copy Public Link Button -->
                 <button id="copyLinkBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <i class="fas fa-link mr-2"></i>Copy Public Link
                 </button>
@@ -32,17 +31,17 @@
                     <i class="fas fa-envelope mr-2"></i>Send Email
                 </button>
 
-                <button id="downloadPdfBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                    <i class="fas fa-download mr-2"></i>Download PDF
-                </button>
+                    <button id="downloadPdfBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center">
+                        <i class="fas fa-download mr-2" id="downloadIcon"></i>
+                        <span id="downloadText">Download PDF</span>
+                    </button>
+
             </div>
         </div>
     </header>
 
     <main class="flex-1 overflow-y-auto p-8">
         <div class="max-w-4xl mx-auto bg-white p-12 rounded-xl shadow-sm border border-gray-100" id="invoiceContent">
-
-            <!-- ⭐ YOUR FULL ORIGINAL INVOICE DISPLAY CODE (unchanged) ⭐ -->
 
             <!-- Header Section -->
             <div class="flex justify-between mb-12">
@@ -88,6 +87,7 @@
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <span class="text-gray-500">Issue Date:</span>
                         <span class="font-semibold">{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M d, Y') }}</span>
+
                         @if(!empty($globalSettings->enable_due_date) && $globalSettings->enable_due_date)
                             <span class="text-gray-500">Due Date:</span>
                             <span class="font-semibold">{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</span>
@@ -114,8 +114,11 @@
             <!-- Line Items -->
             @php
                 $currency = $globalSettings->base_currency ?? '$';
+
                 $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
+
                 $rushFee = $invoice->rush_enabled_value ? ($invoice->rush_fee ?? 0) : 0;
+
                 if (!empty($globalSettings->enable_tax) && $globalSettings->enable_tax) {
                     $taxRate = $globalSettings->tax_percentage ? $globalSettings->tax_percentage / 100 : 0;
                     $taxAmount = ($subtotal + $rushFee) * $taxRate;
@@ -123,7 +126,10 @@
                     $taxRate = 0;
                     $taxAmount = 0;
                 }
-                $total = $subtotal + $rushFee + $taxAmount;
+
+                $discount = $invoice->discount ?? 0;
+
+                $total = max(0, $subtotal + $rushFee + $taxAmount - $discount);
             @endphp
 
             <table class="w-full mb-8">
@@ -175,6 +181,13 @@
                         </div>
                     @endif
 
+                    @if($discount > 0)
+                        <div class="flex justify-between py-2 border-t border-gray-200 text-red-600 font-semibold">
+                            <span>Discount:</span>
+                            <span>-{{ $currency }}{{ number_format($discount, 2) }}</span>
+                        </div>
+                    @endif
+
                     <div class="flex justify-between py-3 border-t-2 border-gray-800 text-xl font-bold">
                         <span>Total:</span>
                         <span>{{ $currency }}{{ number_format($total, 2) }}</span>
@@ -213,12 +226,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // EDIT BUTTON
         document.getElementById('editInvoiceBtn')?.addEventListener('click', function () {
             window.location.href = "{{ route('invoices.edit', $invoice->id) }}";
         });
 
-        // VOID BUTTON
         document.getElementById('voidBtn')?.addEventListener('click', () => {
             Swal.fire({
                 title: 'Are you sure?',
@@ -235,7 +246,6 @@
             });
         });
 
-        // SEND EMAIL
         document.getElementById('sendEmailBtn').addEventListener('click', function () {
             Swal.fire({
                 title: 'Send Invoice Email?',
@@ -276,7 +286,6 @@
             });
         });
 
-        // ⭐ COPY PUBLIC LINK BUTTON
         document.getElementById('copyLinkBtn').addEventListener('click', function () {
             const publicUrl = "{{ route('invoices.public', $invoice->id) }}";
 
@@ -297,7 +306,6 @@
                 });
         });
 
-        // DOWNLOAD PDF
         document.getElementById('downloadPdfBtn').addEventListener('click', function () {
             Swal.fire({
                 title: 'Download PDF?',
@@ -310,37 +318,68 @@
                 if (!result.isConfirmed) return;
 
                 const btn = document.getElementById('downloadPdfBtn');
-                btn.disabled = true;
-                btn.textContent = 'Generating PDF...';
+                const icon = document.getElementById('downloadIcon');
+                const text = document.getElementById('downloadText');
 
-                fetch('{{ route("invoices.download", $invoice->id) }}', {
+                // Disable button and show loader
+                btn.disabled = true;
+                icon.className = 'fas fa-spinner fa-spin mr-2'; // spinning icon
+                text.innerText = 'Generating PDF...';
+
+                fetch('{{ route("invoices.downloads", $invoice->id) }}', {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
+                    },
+                    credentials: 'same-origin'
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const link = document.createElement('a');
-                            link.href = 'data:application/pdf;base64,' + data.fileData;
-                            link.download = data.fileName;
-                            link.click();
-                            Swal.fire('Success!', data.message, 'success');
-                        } else {
-                            Swal.fire('Failed!', data.message || 'Failed to generate PDF.', 'error');
-                        }
+                    .then(res => {
+                        if (!res.ok) throw new Error('Server error');
+                        return res.json();
                     })
-                    .catch(() => {
-                        Swal.fire('Error', 'Error generating PDF. Please try again.', 'error');
+                    .then(data => {
+                        if (!data.success) {
+                            Swal.fire('Failed!', data.message || 'Failed to generate PDF.', 'error');
+                            return;
+                        }
+
+                        // Convert base64 → Blob
+                        const byteCharacters = atob(data.fileData);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+                        // Trigger download
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = data.fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+
+                        Swal.fire('Success!', 'PDF downloaded successfully.', 'success');
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        Swal.fire('Error', 'Failed to prepare PDF. Make sure you are logged in.', 'error');
                     })
                     .finally(() => {
+                        // Reset button state
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-download mr-2"></i>Download PDF';
+                        icon.className = 'fas fa-download mr-2'; // restore download icon
+                        text.innerText = 'Download PDF';
                     });
             });
         });
 
     </script>
+
 @endsection
