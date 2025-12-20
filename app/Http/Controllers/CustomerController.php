@@ -79,46 +79,65 @@ class CustomerController extends Controller
     public function import(ImportCustomersRequest $request)
     {
         $this->authorize('import', Customer::class);
+
         try {
-            // Ensure file exists and is readable
+            // Validate file exists
             if (!$request->hasFile('file')) {
                 throw new Exception('No file uploaded.');
             }
 
-            $path = $request->file('file')->getRealPath();
+            $file = $request->file('file');
+            $path = $file->getRealPath();
+            $extension = strtolower($file->getClientOriginalExtension());
 
             if (!file_exists($path)) {
                 throw new Exception('Uploaded file not found on server.');
             }
 
-            $file = fopen($path, 'r');
-            if (!$file) {
-                throw new Exception('Unable to open the uploaded file.');
+            $rows = [];
+
+            // Read CSV or TXT
+            if (in_array($extension, ['csv', 'txt'])) {
+                $handle = fopen($path, 'r');
+                if (!$handle) {
+                    throw new Exception('Unable to open the uploaded file.');
+                }
+
+                while (($data = fgetcsv($handle)) !== false) {
+                    $rows[] = $data;
+                }
+
+                fclose($handle);
+
+                // Read Excel files
+            } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                $excelData = Excel::toArray([], $file);
+                $rows = $excelData[0] ?? []; // first sheet
+            } else {
+                throw new Exception('Unsupported file type.');
             }
 
-            $header = fgetcsv($file);
-
-            if (!$header || count($header) === 0) {
-                throw new Exception('The CSV file appears to be empty or missing headers.');
+            if (empty($rows)) {
+                throw new Exception('The file appears to be empty.');
             }
 
-            // Normalize header keys (trim, lowercase, replace spaces with underscores)
-            $header = array_map(fn($h) => Str::slug(trim($h), '_'), $header);
+            // Normalize headers
+            $header = array_map(fn($h) => Str::slug(trim($h), '_'), array_shift($rows));
 
             $count = 0;
             $skipped = 0;
 
-            while (($row = fgetcsv($file)) !== false) {
-                $data = @array_combine($header, $row);
+            foreach ($rows as $row) {
+                // Normalize row length to match header
+                $row = array_slice($row, 0, count($header));
+                $row = array_pad($row, count($header), '');
 
-                if (!$data) {
-                    $skipped++;
-                    continue;
-                }
+                $data = array_combine($header, $row);
 
+                // Skip rows with empty email
                 if (empty($data['email'])) {
                     $skipped++;
-                    continue; // Skip invalid or empty email rows
+                    continue;
                 }
 
                 Customer::updateOrCreate(
@@ -138,23 +157,20 @@ class CustomerController extends Controller
                 $count++;
             }
 
-            fclose($file);
-
             $message = "{$count} customers imported successfully.";
             if ($skipped > 0) {
-                $message .= " {$skipped} rows were skipped due to missing or invalid data.";
+                $message .= " {$skipped} rows were skipped due to missing or invalid email.";
             }
 
             return redirect()
                 ->route('customers.index')
                 ->with('success', $message);
+
         } catch (Exception $e) {
-            // Log detailed error for developers
             Log::error('Customer import failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Return user-friendly error message
             return redirect()
                 ->back()
                 ->with('error', 'There was an error importing the customers: ' . $e->getMessage());
