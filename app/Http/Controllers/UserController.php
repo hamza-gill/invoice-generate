@@ -23,6 +23,7 @@ class UserController extends Controller
 
     public function invite(Request $request)
     {
+        $this->authorize('create', User::class);
         $request->validate([
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:Admin,Manager,Staff',
