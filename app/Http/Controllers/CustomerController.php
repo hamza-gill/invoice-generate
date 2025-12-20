@@ -6,6 +6,7 @@ use App\Http\Requests\ImportCustomersRequest;
 use App\Models\Customer;
 use Exception;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
