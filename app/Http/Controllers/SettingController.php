@@ -21,11 +21,12 @@ class SettingController extends Controller
     {
         $this->authorize('view', \App\Models\Setting::class);
         $setting = Setting::first();
+        $webhookUrl = secure_url('/webhook');
 
         // Get webhook settings (or create a new instance if none exists)
         $webhookSetting = WebhookSetting::first() ?? new WebhookSetting();
 
-        return view('settings.index', compact('setting', 'webhookSetting'));
+        return view('settings.index', compact('setting', 'webhookSetting','webhookUrl'));
     }
 
     public function updateOrganization(UpdateOrganizationRequest  $request)
