@@ -13,7 +13,7 @@
         <!-- Customer Info -->
         <div class="col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 class="text-xl font-semibold mb-4 text-gray-800">Customer Details</h2>
-            <p><strong>Name:</strong> {{ $customer->name ?? 'N/A' }}</p>
+            <p><strong>Name:</strong> {{ $customer->full_name  ?? 'N/A' }}</p>
             <p><strong>Email:</strong> {{ $customer->email ?? 'N/A' }}</p>
             <p><strong>Company:</strong> {{ $customer->company_name ?? 'N/A' }}</p>
             <p><strong>Street:</strong> {{ $customer->street_address ?? 'N/A' }}</p>

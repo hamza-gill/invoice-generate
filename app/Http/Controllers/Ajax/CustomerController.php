@@ -14,7 +14,8 @@ class CustomerController extends Controller
 
         try {
             $customers = \App\Models\Customer::query()
-                ->where('name', 'like', "%{$search}%")
+                ->where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
                 ->limit(10)
                 ->get();
@@ -31,8 +32,10 @@ class CustomerController extends Controller
             $results = $customers->map(function ($c) {
                 return [
                     'id' => $c->id,
-                    'text' => "{$c->name} ({$c->email})",
-                    'name' => $c->name,
+                    'text' => "{$c->first_name } {$c->last_name} ({$c->email})",
+                    'name' => $c->first_name . ' '. $c->last_name,
+                    'first_name' => $c->first_name ,
+                    'last_name' =>  $c->last_name,
                     'company_name' => $c->company_name,
                     'email' => $c->email,
                     'address' => $c->address,

@@ -64,14 +64,14 @@ class InvoiceResponseController extends Controller
             return view('invoices.rejected', compact('invoice'));
         }
 
-        // ✅ 5. Fallback for invalid actions
+        // 5. Fallback for invalid actions
         $invoice->logActivity('invalid_action', "Customer tried invalid invoice action: {$action}");
         $invoice->notifyAction('invalid_action', "Customer tried invalid invoice action: {$action}", 'invalid_action');
 
         abort(404, 'Invalid action.');
     }
 
-    // ✅ STEP 1: Review & accept page before payment
+    //  STEP 1: Review & accept page before payment
     public function acceptPage(Invoice $invoice)
     {
         if ($invoice->status === 'declined') {

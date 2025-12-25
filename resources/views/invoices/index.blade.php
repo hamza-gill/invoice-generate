@@ -42,7 +42,7 @@
                             #{{ $invoice->invoice_number }}
                         </a>
                     </td>
-                    <td class="p-4 border-b">{{ $invoice->customer->name ?? 'N/A' }}</td>
+                    <td class="p-4 border-b">{{ $invoice->customer->full_name ?? 'N/A' }}</td>
                     <td class="p-4 border-b font-semibold">USD {{ number_format($invoice->amount, 2) }}</td>
                     <td class="p-4 border-b text-gray-600">{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M d, Y') }}</td>
                     <td class="p-4 border-b text-gray-600">{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</td>

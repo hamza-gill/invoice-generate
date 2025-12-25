@@ -52,7 +52,7 @@
                                 <select id="customerSelect" name="customer_id" class="w-full">
                                     @if($invoice->customer)
                                         <option value="{{ $invoice->customer->id }}" selected>
-                                            {{ $invoice->customer->name }} ({{ $invoice->customer->email }})
+                                            {{ $invoice->customer->full_name }} ({{ $invoice->customer->email }})
                                         </option>
                                     @endif
                                 </select>
@@ -65,7 +65,7 @@
                             <input type="text"
                                    id="customer_name"
                                    name="name"
-                                   value="{{ old('name', $invoice->customer->name ?? '') }}"
+                                   value="{{ old('name', $invoice->customer->full_name ?? '') }}"
                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
                                    required>
                         </div>

@@ -79,7 +79,7 @@
             <div class="grid grid-cols-2 gap-8 mb-12">
                 <div>
                     <p class="text-sm text-gray-500 mb-2">BILL TO:</p>
-                    <p>{{ $invoice->customer->name ?? 'N/A' }}</p>
+                    <p>{{ $invoice->customer->full_name ?? 'N/A' }}</p>
                     <p>{{ $invoice->customer->email ?? 'N/A' }}</p>
                     <p>{{ $invoice->customer->address ?? 'N/A' }}</p>
                 </div>

@@ -24,7 +24,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div class="p-4 bg-gray-50 rounded-lg shadow-sm">
                 <h2 class="text-lg font-semibold mb-2">Customer Information</h2>
-                <p class="text-sm sm:text-base"><strong>Name:</strong> {{ $invoice->customer->name }}</p>
+                <p class="text-sm sm:text-base"><strong>Name:</strong> {{ $invoice->customer->full_name }}</p>
                 <p class="text-sm sm:text-base"><strong>Email:</strong> {{ $invoice->customer->email }}</p>
                 <p class="text-sm sm:text-base"><strong>Address:</strong> {{ $invoice->project_address }}</p>
             </div>

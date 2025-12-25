@@ -42,7 +42,8 @@ class CustomerController extends Controller
         $this->authorize('create', Customer::class);
         // Validate incoming request
         $validatedData = $request->validate([
-            'name'              => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
             'company_name'      => 'nullable|string|max:255',
             'email'             => 'required|email|unique:customers,email',
             'phone_number'      => 'nullable|string|max:50',
@@ -140,11 +141,21 @@ class CustomerController extends Controller
                     $skipped++;
                     continue;
                 }
+                // 🔹 Resolve First & Last Name
+                $firstName = $data['first_name'] ?? null;
+                $lastName  = $data['last_name'] ?? null;
+
+                if (!$firstName && isset($data['name'])) {
+                    $nameParts = preg_split('/\s+/', trim($data['name']), 2);
+                    $firstName = $nameParts[0] ?? null;
+                    $lastName  = $nameParts[1] ?? null;
+                }
 
                 Customer::updateOrCreate(
                     ['email' => trim($data['email'])],
                     [
-                        'name' => $data['name'] ?? null,
+                        'first_name'   => $firstName,
+                        'last_name'    => $lastName,
                         'company_name' => $data['company_name'] ?? $data['company'] ?? null,
                         'address' => $data['street_address'] ?? $data['street'] ?? null,
                         'city' => $data['city'] ?? null,
@@ -187,7 +198,8 @@ class CustomerController extends Controller
             $customers = \App\Models\Customer::withCount('invoices')
                 ->when($query, function ($q) use ($query) {
                     $q->where(function ($sub) use ($query) {
-                        $sub->where('name', 'like', "%{$query}%")
+                        $sub->where('first_name', 'like', "%{$query}%")
+                            ->orWhere('last_name', 'like', "%{$query}%")
                             ->orWhere('email', 'like', "%{$query}%")
                             ->orWhere('company_name', 'like', "%{$query}%")
                             ->orWhere('country', 'like', "%{$query}%")
@@ -197,7 +209,7 @@ class CustomerController extends Controller
                             ->orWhere('address', 'like', "%{$query}%");
                     });
                 })
-                ->orderBy('name', 'asc')
+                ->orderBy('email', 'asc')
                 ->limit(30)
                 ->get();
 

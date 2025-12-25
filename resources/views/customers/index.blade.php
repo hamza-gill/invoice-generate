@@ -45,7 +45,7 @@
             <tbody id="customerTableBody">
             @forelse($customers as $customer)
                 <tr class="hover:bg-gray-50 transition">
-                    <td class="p-4 border-b">{{ $customer->name }}</td>
+                    <td class="p-4 border-b">{{ $customer->full_name  }}</td>
                     <td class="p-4 border-b">{{ $customer->email }}</td>
                     <td class="p-4 border-b">{{ $customer->company_name ?? 'N/A' }}</td>
                     <td class="p-4 border-b">{{ $customer->address ?? 'N/A' }}</td>

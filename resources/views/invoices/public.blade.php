@@ -40,7 +40,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div class="p-4 bg-gray-50 rounded-xl shadow-sm">
                 <h2 class="font-semibold text-lg mb-2">Billed To:</h2>
-                <p>{{ $invoice->customer->name ?? 'N/A' }}</p>
+                <p>{{ $invoice->customer->full_name ?? 'N/A' }}</p>
                 <p>{{ $invoice->customer->email ?? 'N/A' }}</p>
                 <p>{{ $invoice->customer->address ?? 'N/A' }}</p>
             </div>

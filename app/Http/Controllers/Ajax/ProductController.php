@@ -49,7 +49,7 @@ class ProductController extends Controller
                         'name' => $product->name,
                         'price' => $product->price,
                         'stock' => $product->stock,
-                        'label' => "{$product->name} - $ {$product->price}",
+                        'label' => "{$product->name}",
                     ];
                 })
             ]);

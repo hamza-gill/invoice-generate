@@ -12,7 +12,8 @@ class Customer extends Model
 
     protected $fillable = [
         'stripe_customer_id',
-        'name',
+        'first_name',
+        'last_name',
         'company_name',
         'email',
         'phone_number',
@@ -22,6 +23,11 @@ class Customer extends Model
         'state',
         'country',
     ];
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
 
     public function invoices()
     {

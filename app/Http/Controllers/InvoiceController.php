@@ -26,7 +26,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', Invoice::class);
 
-        $invoices = Invoice::with('customer:id,name,company_name')->orderBy('id','desc')->paginate(10);
+        $invoices = Invoice::with( 'customer:id,first_name,last_name,company_name')->orderBy('id','desc')->paginate(10);
 
         return view('invoices.index', compact('invoices'));
     }
@@ -53,11 +53,16 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $firstName  =  $request->input('first_name');
+            $lastName  =  $request->input('last_name');
+
             // Fetch or create customer
             $customer = Customer::updateOrCreate(
                 ['email' => $request->input('email')],
                 [
-                    'name' => $request->input('name'),
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'address' => $request->input('address'),
                     'company_name' => $request->input('company_name'),
                     'city' => $request->input('city'),
@@ -264,11 +269,20 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
+            $firstName =  null;
+            $lastName =  null;
+            $name  =  $request->input('name');
+            if (!$lastName && isset($name)) {
+                $nameParts = preg_split('/\s+/', trim($name), 2);
+                $firstName = $nameParts[0] ?? null;
+                $lastName  = $nameParts[1] ?? null;
+            }
             // ✅ Fetch or update customer
             $customer = Customer::updateOrCreate(
                 ['email' => $request->input('email')],
                 [
-                    'name' => $request->input('name'),
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                     'address' => $request->input('address'),
                     'company_name' => $request->input('company_name'),
                     'city' => $request->input('city'),

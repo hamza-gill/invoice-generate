@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('notifiable_type', 255)->index();
             $table->unsignedBigInteger('notifiable_id');
             $table->text('data');
-            $table->enum('status', ['alert', 'incomplete', 'complete'])->default('alert');
+            $table->string('status', )->nullable()->default('alert');
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });

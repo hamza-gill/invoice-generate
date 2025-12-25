@@ -167,7 +167,7 @@
             <tr>
                 <td>
                     <p><strong>BILL TO:</strong></p>
-                    <p>{{ $invoice->customer->name ?? 'N/A' }}</p>
+                    <p>{{ $invoice->customer->full_name ?? 'N/A' }}</p>
                     <p>{{ $invoice->customer->email ?? 'N/A' }}</p>
                     <p>{{ $invoice->customer->address ?? 'N/A' }}</p>
                 </td>
