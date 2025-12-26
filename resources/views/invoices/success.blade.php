@@ -82,12 +82,21 @@
                         </tr>
                     @endif
                     </tbody>
+
                     @php
                         $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
                         $rushFee = ($invoice->rush_enabled_value) ? $invoice->rush_fee : 0;
                         $discount = $invoice->discount ?? 0;
-                        $total = $subtotal + $rushFee - $discount;
+                        $taxAmount = 0;
+
+                        if (!empty($globalSettings->enable_tax) && $globalSettings->enable_tax) {
+                            $taxRate = floatval($globalSettings->tax_percentage) / 100;
+                            $taxAmount = ($subtotal + $rushFee) * $taxRate;
+                        }
+
+                        $total = $subtotal + $rushFee + $taxAmount - $discount;
                     @endphp
+
                     <tfoot class="bg-gray-100 font-semibold">
                     <tr>
                         <td colspan="3" class="p-3 text-right">Subtotal:</td>
@@ -97,6 +106,12 @@
                         <tr>
                             <td colspan="3" class="p-3 text-right text-red-600">Discount:</td>
                             <td class="p-3 text-right text-red-600">-${{ number_format($discount, 2) }}</td>
+                        </tr>
+                    @endif
+                    @if($taxAmount > 0)
+                        <tr>
+                            <td colspan="3" class="p-3 text-right">Tax ({{ $globalSettings->tax_percentage }}%):</td>
+                            <td class="p-3 text-right">${{ number_format($taxAmount, 2) }}</td>
                         </tr>
                     @endif
                     <tr>

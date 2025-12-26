@@ -158,8 +158,6 @@ class InvoiceController extends Controller
     }
 
 
-
-
     /**
      * Display the specified resource.
      */
@@ -182,7 +180,6 @@ class InvoiceController extends Controller
 
         return view('invoices.show', compact('invoice'));
     }
-
 
     public function search(Request $request)
     {

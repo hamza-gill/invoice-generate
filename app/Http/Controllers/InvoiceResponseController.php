@@ -92,16 +92,34 @@ class InvoiceResponseController extends Controller
     // ✅ STEP 2: Create Stripe session (includes rush fee if enabled)
     public function createPaymentSession(Request $request, Invoice $invoice)
     {
+        // Subtotal
+        $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
 
-        // Save rush selection
-        $totalAmount = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
-        $rushEnabled = $request->has('rush_enabled_value') ? true : false;
-        if ($rushEnabled) {
+        // Rush
+        $rushEnabled = $request->input('rush_enabled_value', 0);
+        $rushFee = $rushEnabled ? floatval($request->input('rush_fee', 0)) : 0;
 
-            $rushFee = $rushEnabled ? ($request->rush_fee ?? 0) : 0;
-            $totalAmount = $totalAmount + $rushFee;
+        // Discount
+        $discount = floatval($invoice->discount ?? 0);
+
+        // Tax
+        $globalSettings = config('settings'); // or however you access it
+
+
+        if (!empty($globalSettings['tax_percentage']) && $globalSettings['tax_percentage']) {
+
+            $taxRate = ($globalSettings['tax_percentage'] ?? 0) / 100;
+            $taxAmount = round((($subtotal + $rushFee) * $taxRate),2);
+
+        } else {
+            $taxAmount = 0;
         }
 
+        // Final total
+        $totalAmount = max(
+            0,
+            $subtotal + $rushFee + $taxAmount - $discount
+        );
 
         // Stripe
         $stripeSecret = config('settings.stripe_secret_key');
@@ -112,13 +130,14 @@ class InvoiceResponseController extends Controller
             [
                 'price_data' => [
                     'currency' => 'USD',
-                    'product_data' => ['name' => "Invoice #{$invoice->invoice_number}"],
-                    'unit_amount' => $totalAmount * 100,
+                    'product_data' => [
+                        'name' => "Invoice #{$invoice->invoice_number}"
+                    ],
+                    'unit_amount' => (int) round($totalAmount * 100),
                 ],
                 'quantity' => 1,
             ],
         ];
-
 
         $session = Session::create([
             'payment_method_types' => ['card'],
@@ -127,28 +146,44 @@ class InvoiceResponseController extends Controller
             'customer_email' => $invoice->customer->email,
             'success_url' => route('invoices.success', $invoice->id),
             'cancel_url' => route('invoices.cancel', $invoice->id),
-            'metadata' => ['invoice_id' => $invoice->id],
+            'metadata' => [
+                'invoice_id' => $invoice->id,
+            ],
         ]);
 
-        // Save Stripe details
+        // Save Stripe + invoice values
         $invoice->update([
             'payment_gateway'        => 'stripe',
             'gateway_transaction_id' => $session->id,
             'gateway_response'       => array_merge($session->toArray(), ['url' => $session->url]),
             'payment_status'         => 'pending',
             'status'                 => 'pending',
+
+            // Amounts
             'amount'                 => $totalAmount,
-            'rush_enabled_value'     => $request->input('rush_enabled_value', 0),
-            'rush_description'       => $request->input('rush_label', null),
-            'rush_fee'               => $request->input('rush_fee', 0),
+            'tax_amount'             => $taxAmount,
+
+            // Rush
+            'rush_enabled_value'     => $rushEnabled,
+            'rush_description'       => $request->input('rush_label'),
+            'rush_fee'               => $rushFee,
             'rush_delivery_type'     => $request->input('rush_delivery_days', 'standard'),
         ]);
 
-        $invoice->logActivity('proceed_payment', 'Customer proceeded to payment via Stripe checkout.');
-        $invoice->notifyAction('proceed_payment', 'Customer proceeded to Stripe checkout.', 'pending');
+        $invoice->logActivity(
+            'proceed_payment',
+            'Customer proceeded to payment via Stripe checkout.'
+        );
+
+        $invoice->notifyAction(
+            'proceed_payment',
+            'Customer proceeded to Stripe checkout.',
+            'pending'
+        );
 
         return redirect($session->url);
     }
+
 
 
     public function rejected(Invoice $invoice)
