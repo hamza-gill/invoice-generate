@@ -206,32 +206,26 @@
                                     $userRole = auth()->user()->role ?? 'manager';
                                     $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
 
-                                    // Mask Stripe Public Key (for ALL users)
+                                    // Get ACTUAL values (never mask in PHP for form submission)
                                     $stripePublicKey = $setting->stripe_public_key ?? '';
+                                    $stripeSecretKey = $setting->stripe_secret_key ?? '';
+                                    $webhookUrl = $webhookUrl ?? '';
+                                    $webhookSecret = $setting->webhook_secret ?? '';
+                                    $googleKey = $setting->google_places_key ?? '';
+
+                                    // Create MASKED versions for DISPLAY only
                                     $maskedPublicKey = $stripePublicKey
                                         ? str_repeat('*', max(0, strlen($stripePublicKey) - 4)) . substr($stripePublicKey, -4)
                                         : '';
-
-                                    // Mask Stripe Secret Key (for ALL users)
-                                    $stripeSecretKey = $setting->stripe_secret_key ?? '';
                                     $maskedSecretKey = $stripeSecretKey
                                         ? str_repeat('*', max(0, strlen($stripeSecretKey) - 4)) . substr($stripeSecretKey, -4)
                                         : '';
-
-                                    // Mask Webhook URL (for ALL users)
-                                    $webhookUrl = $webhookUrl  ?? '';
                                     $maskedWebhookUrl = $webhookUrl
                                         ? str_repeat('*', max(0, strlen($webhookUrl) - 4)) . substr($webhookUrl, -4)
                                         : '';
-
-                                    // Mask Webhook Secret (for ALL users)
-                                    $webhookSecret = $setting->webhook_secret ?? '';
                                     $maskedWebhookSecret = $webhookSecret
                                         ? str_repeat('*', max(0, strlen($webhookSecret) - 4)) . substr($webhookSecret, -4)
                                         : '';
-
-                                    // Mask Google Places Key (for ALL users)
-                                    $googleKey = $setting->google_places_key ?? '';
                                     $maskedGoogleKey = $googleKey
                                         ? str_repeat('*', max(0, strlen($googleKey) - 4)) . substr($googleKey, -4)
                                         : '';
@@ -241,20 +235,28 @@
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Public Key</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="stripe_public_key"
-                                            name="stripe_public_key"
-                                            value="{{ old('stripe_public_key', $maskedPublicKey) }}"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                            placeholder="pk_live_xxxxx"
+                                        <!-- Hidden field with ACTUAL value (this gets submitted) -->
+                                        <input type="hidden"
+                                               name="stripe_public_key"
+                                               id="stripe_public_key_actual"
+                                               value="{{ old('stripe_public_key', $stripePublicKey) }}">
+
+                                        <!-- Display field with MASKED value (for UI only) -->
+                                        <input type="password"
+                                               id="stripe_public_key_display"
+                                               value="{{ $maskedPublicKey }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="pk_live_xxxxx"
+                                               data-actual-field="stripe_public_key_actual"
                                             {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleStripePublicKey"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="stripe_public_key_display"
+                                                    data-actual-field="stripe_public_key_actual"
                                                     data-full-key="{{ $stripePublicKey }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    data-masked-key="{{ $maskedPublicKey }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -266,20 +268,26 @@
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Secret Key</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="stripe_secret_key"
-                                            name="stripe_secret_key"
-                                            value="{{ old('stripe_secret_key', $maskedSecretKey) }}"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                            placeholder="sk_live_xxxxx"
+                                        <input type="hidden"
+                                               name="stripe_secret_key"
+                                               id="stripe_secret_key_actual"
+                                               value="{{ old('stripe_secret_key', $stripeSecretKey) }}">
+
+                                        <input type="password"
+                                               id="stripe_secret_key_display"
+                                               value="{{ $maskedSecretKey }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="sk_live_xxxxx"
+                                               data-actual-field="stripe_secret_key_actual"
                                             {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleStripeSecretKey"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="stripe_secret_key_display"
+                                                    data-actual-field="stripe_secret_key_actual"
                                                     data-full-key="{{ $stripeSecretKey }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    data-masked-key="{{ $maskedSecretKey }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -291,19 +299,19 @@
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="webhook_url"
-                                            readonly
-                                            value="{{ $maskedWebhookUrl }}"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 cursor-not-allowed">
+                                        <input type="password"
+                                               id="webhook_url_display"
+                                               readonly
+                                               value="{{ $maskedWebhookUrl }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 cursor-not-allowed">
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleWebhookUrl"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="webhook_url_display"
                                                     data-full-key="{{ $webhookUrl }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
-                                                <i class="fas fa-eye" id="toggleIcon"></i>
+                                                    data-masked-key="{{ $maskedWebhookUrl }}">
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
 
@@ -316,24 +324,29 @@
                                     <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
                                 </div>
 
-
                                 <!-- Webhook Secret -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="integration_webhook_secret"
-                                            name="webhook_secret"
-                                            value="{{ old('webhook_secret', $maskedWebhookSecret) }}"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                        <input type="hidden"
+                                               name="webhook_secret"
+                                               id="integration_webhook_secret_actual"
+                                               value="{{ old('webhook_secret', $webhookSecret) }}">
+
+                                        <input type="password"
+                                               id="integration_webhook_secret_display"
+                                               value="{{ $maskedWebhookSecret }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               data-actual-field="integration_webhook_secret_actual"
                                             {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleIntegrationWebhookSecret"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="integration_webhook_secret_display"
+                                                    data-actual-field="integration_webhook_secret_actual"
                                                     data-full-key="{{ $webhookSecret }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    data-masked-key="{{ $maskedWebhookSecret }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -345,20 +358,26 @@
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Google Places API Key</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="google_places_key"
-                                            name="google_places_key"
-                                            value="{{ old('google_places_key', $maskedGoogleKey) }}"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Enter your Google Places API Key"
+                                        <input type="hidden"
+                                               name="google_places_key"
+                                               id="google_places_key_actual"
+                                               value="{{ old('google_places_key', $googleKey) }}">
+
+                                        <input type="password"
+                                               id="google_places_key_display"
+                                               value="{{ $maskedGoogleKey }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Enter your Google Places API Key"
+                                               data-actual-field="google_places_key_actual"
                                             {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleGoogleKey"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="google_places_key_display"
+                                                    data-actual-field="google_places_key_actual"
                                                     data-full-key="{{ $googleKey }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    data-masked-key="{{ $maskedGoogleKey }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -393,14 +412,14 @@
                                 $userRole = auth()->user()->role ?? 'manager';
                                 $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
 
-                                // Mask Tax ID
+                                // Get ACTUAL values
                                 $taxId = $setting->tax_id ?? '';
+                                $invoiceNumber = $setting->starting_invoice_number ?? 'INV-' . date('Y') . '-001';
+
+                                // Create MASKED versions for display
                                 $maskedTaxId = $taxId
                                     ? str_repeat('*', max(0, strlen($taxId) - 4)) . substr($taxId, -4)
                                     : '';
-
-                                // Mask Starting Invoice Number
-                                $invoiceNumber = $setting->starting_invoice_number ?? 'INV-' . date('Y') . '-001';
                                 $maskedInvoiceNumber = $invoiceNumber
                                     ? str_repeat('*', max(0, strlen($invoiceNumber) - 4)) . substr($invoiceNumber, -4)
                                     : '';
@@ -409,20 +428,26 @@
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Tax ID</label>
                                 <div class="flex items-center space-x-3">
-                                    <input
-                                        type="password"
-                                        id="tax_id_invoice"
-                                        name="tax_id_invoice"
-                                        value="{{ old('tax_id_invoice', $maskedTaxId) }}"
-                                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="123-456-789"
+                                    <input type="hidden"
+                                           name="tax_id_invoice"
+                                           id="tax_id_invoice_actual"
+                                           value="{{ old('tax_id_invoice', $taxId) }}">
+
+                                    <input type="password"
+                                           id="tax_id_invoice_display"
+                                           value="{{ $maskedTaxId }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           placeholder="123-456-789"
+                                           data-actual-field="tax_id_invoice_actual"
                                         {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
 
                                     @if($isAdminOrDeveloper)
                                         <button type="button"
-                                                id="toggleTaxId"
+                                                class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                data-display-field="tax_id_invoice_display"
+                                                data-actual-field="tax_id_invoice_actual"
                                                 data-full-key="{{ $taxId }}"
-                                                class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                data-masked-key="{{ $maskedTaxId }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     @endif
@@ -433,20 +458,26 @@
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Starting Invoice Number</label>
                                 <div class="flex items-center space-x-3">
-                                    <input
-                                        type="password"
-                                        id="starting_invoice_number"
-                                        name="starting_invoice_number"
-                                        value="{{ old('starting_invoice_number', $maskedInvoiceNumber) }}"
-                                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="INV-2025-001"
+                                    <input type="hidden"
+                                           name="starting_invoice_number"
+                                           id="starting_invoice_number_actual"
+                                           value="{{ old('starting_invoice_number', $invoiceNumber) }}">
+
+                                    <input type="password"
+                                           id="starting_invoice_number_display"
+                                           value="{{ $maskedInvoiceNumber }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                           placeholder="INV-2025-001"
+                                           data-actual-field="starting_invoice_number_actual"
                                         {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
 
                                     @if($isAdminOrDeveloper)
                                         <button type="button"
-                                                id="toggleInvoiceNumber"
+                                                class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                data-display-field="starting_invoice_number_display"
+                                                data-actual-field="starting_invoice_number_actual"
                                                 data-full-key="{{ $invoiceNumber }}"
-                                                class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                data-masked-key="{{ $maskedInvoiceNumber }}">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     @endif
@@ -633,36 +664,42 @@
                                     $userRole = auth()->user()->role ?? 'manager';
                                     $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
 
-                                    // Mask Webhook URL
+                                    // Get ACTUAL values
                                     $webhookSettingUrl = $webhookSetting->webhook_url ?? '';
+                                    $webhookSettingSecret = $webhookSetting->webhook_secret ?? '';
+
+                                    // Create MASKED versions
                                     $maskedWebhookSettingUrl = $webhookSettingUrl
                                         ? str_repeat('*', max(0, strlen($webhookSettingUrl) - 4)) . substr($webhookSettingUrl, -4)
                                         : '';
-
-                                    // Mask Webhook Secret
-                                    $webhookSecret = $webhookSetting->webhook_secret ?? '';
-                                    $maskedWebhookSecret = $webhookSecret
-                                        ? str_repeat('*', max(0, strlen($webhookSecret) - 4)) . substr($webhookSecret, -4)
+                                    $maskedWebhookSettingSecret = $webhookSettingSecret
+                                        ? str_repeat('*', max(0, strlen($webhookSettingSecret) - 4)) . substr($webhookSettingSecret, -4)
                                         : '';
                                 @endphp
 
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="webhook_setting_url"
-                                            name="webhook_url"
-                                            value="{{ old('webhook_url', $maskedWebhookSettingUrl) }}"
-                                            placeholder="https://example.com/webhook"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        <input type="hidden"
+                                               name="webhook_url"
+                                               id="webhook_setting_url_actual"
+                                               value="{{ old('webhook_url', $webhookSettingUrl) }}">
+
+                                        <input type="password"
+                                               id="webhook_setting_url_display"
+                                               value="{{ $maskedWebhookSettingUrl }}"
+                                               placeholder="https://example.com/webhook"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                               data-actual-field="webhook_setting_url_actual"
                                             {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleWebhookSettingUrl"
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="webhook_setting_url_display"
+                                                    data-actual-field="webhook_setting_url_actual"
                                                     data-full-key="{{ $webhookSettingUrl }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    data-masked-key="{{ $maskedWebhookSettingUrl }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -673,20 +710,26 @@
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
                                     <div class="flex items-center space-x-3">
-                                        <input
-                                            type="password"
-                                            id="webhook_secret"
-                                            name="webhook_secret"
-                                            value="{{ old('webhook_secret', $maskedWebhookSecret) }}"
-                                            placeholder="secret-key"
-                                            class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        <input type="hidden"
+                                               name="webhook_secret"
+                                               id="webhook_setting_secret_actual"
+                                               value="{{ old('webhook_secret', $webhookSettingSecret) }}">
+
+                                        <input type="password"
+                                               id="webhook_setting_secret_display"
+                                               value="{{ $maskedWebhookSettingSecret }}"
+                                               placeholder="secret-key"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                               data-actual-field="webhook_setting_secret_actual"
                                             {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
 
                                         @if($isAdminOrDeveloper)
                                             <button type="button"
-                                                    id="toggleWebhookSecret"
-                                                    data-full-key="{{ $webhookSecret }}"
-                                                    class="bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition">
+                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                    data-display-field="webhook_setting_secret_display"
+                                                    data-actual-field="webhook_setting_secret_actual"
+                                                    data-full-key="{{ $webhookSettingSecret }}"
+                                                    data-masked-key="{{ $maskedWebhookSettingSecret }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         @endif
@@ -822,50 +865,64 @@
         });
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Integration Tab Keys
-            setupKeyToggle('google_places_key', 'toggleGoogleKey');
-            setupKeyToggle('stripe_public_key', 'toggleStripePublicKey');
-            setupKeyToggle('stripe_secret_key', 'toggleStripeSecretKey');
-            setupKeyToggle('webhook_url', 'toggleWebhookUrl');
-            setupKeyToggle('integration_webhook_secret', 'toggleIntegrationWebhookSecret');
+            // Universal toggle key visibility handler
+            document.querySelectorAll('.toggle-key-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const displayField = document.getElementById(this.dataset.displayField);
+                    const fullKey = this.dataset.fullKey || '';
+                    const maskedKey = this.dataset.maskedKey || '';
+                    const icon = this.querySelector('i');
 
-            // Invoice Configuration Tab Keys
-            setupKeyToggle('tax_id_invoice', 'toggleTaxId');
-            setupKeyToggle('starting_invoice_number', 'toggleInvoiceNumber');
-
-            // Webhook Settings Tab Keys
-            setupKeyToggle('webhook_setting_url', 'toggleWebhookSettingUrl');
-            setupKeyToggle('webhook_secret', 'toggleWebhookSecret');
-        });
-
-        // Reusable function for key toggle functionality
-        function setupKeyToggle(inputId, toggleId) {
-            const input = document.getElementById(inputId);
-            const toggle = document.getElementById(toggleId);
-
-            if (input && toggle) {
-                const fullKey = toggle.dataset.fullKey || '';
-
-                toggle.addEventListener('click', () => {
-                    const isMasked = input.type === 'password';
-
-                    if (isMasked) {
+                    if (displayField.type === 'password') {
                         // Show full key
-                        input.type = 'text';
-                        input.value = fullKey;
-                        toggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                        displayField.type = 'text';
+                        displayField.value = fullKey;
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
                     } else {
-                        // Mask key
-                        const masked = fullKey
-                            ? '*'.repeat(Math.max(0, fullKey.length - 4)) + fullKey.slice(-4)
-                            : '';
-                        input.type = 'password';
-                        input.value = masked;
-                        toggle.innerHTML = '<i class="fas fa-eye"></i>';
+                        // Hide key (show masked)
+                        displayField.type = 'password';
+                        displayField.value = maskedKey;
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
                     }
                 });
-            }
-        }
+            });
+
+            // Handle user input in display fields - update the hidden actual field
+            document.querySelectorAll('input[data-actual-field]').forEach(displayField => {
+                displayField.addEventListener('input', function() {
+                    const actualFieldId = this.dataset.actualField;
+                    const actualField = document.getElementById(actualFieldId);
+
+                    if (actualField) {
+                        // User is typing a new value - update the hidden field
+                        actualField.value = this.value;
+                    }
+                });
+
+                // When field gains focus and user starts typing, clear the masked placeholder
+                displayField.addEventListener('focus', function() {
+                    if (this.type === 'password' && this.value.includes('*')) {
+                        // Clear masked value so user can type new value
+                        this.value = '';
+                    }
+                });
+
+                // When field loses focus, if it's empty, restore the masked value
+                displayField.addEventListener('blur', function() {
+                    const actualFieldId = this.dataset.actualField;
+                    const actualField = document.getElementById(actualFieldId);
+
+                    if (this.value === '' && actualField && actualField.value) {
+                        // Restore masked version if user didn't enter anything
+                        const fullValue = actualField.value;
+                        const masked = '*'.repeat(Math.max(0, fullValue.length - 4)) + fullValue.slice(-4);
+                        this.value = masked;
+                    }
+                });
+            });
+        });
 
         function copyWebhook(url) {
             navigator.clipboard.writeText(url).then(() => {
