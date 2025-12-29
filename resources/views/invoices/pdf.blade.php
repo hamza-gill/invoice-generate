@@ -147,7 +147,7 @@
             </td>
             <td class="header-right">
                 @if(!empty($globalSettings->logo_path))
-                    <img src="{{ asset('storage/' . $globalSettings->logo_path) }}" class="logo" alt="Logo">
+                    <img src="{{ public_path('storage/' . $globalSettings->logo_path) }}" class="logo">
                 @endif
                 <p><strong>{{ $globalSettings->company_name ?? config('app.name') }}</strong></p>
                 <p>{{ $globalSettings->address ?? '' }}</p>
