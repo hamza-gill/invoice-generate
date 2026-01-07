@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\MicrosoftController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -141,4 +142,21 @@ Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken
 */
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+
+Route::get('/auth/redirect', [MicrosoftController::class, 'redirectToMicrosoft']);
+Route::get('/auth/callback', [MicrosoftController::class, 'handleCallback']);
+Route::get('/send-test-email', [MicrosoftController::class, 'sendTestEmail']);
+
+
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/test-mail', function () {
+    Mail::raw('This is a test email from alias!', function ($message) {
+        $message->to('hamzagill415@gmail.com')
+            ->subject('Test Email via Alias');
+    });
+
+    return 'Test email sent!';
 });
