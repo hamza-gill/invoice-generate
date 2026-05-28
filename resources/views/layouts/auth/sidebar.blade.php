@@ -26,6 +26,15 @@
             <span class="font-medium">Dashboard</span>
         </a>
 
+        @if(auth()->user()->isAdmin() || auth()->user()->isOrganizationOwner())
+            <a href="{{ route('subscription.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('subscription.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-crown w-5"></i>
+                <span>Subscription</span>
+            </a>
+        @endif
+
         <!-- Invoices - Admin, Developer, Manager, Employee -->
         @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
             <a href="{{ route('invoices.index') }}"
@@ -33,6 +42,24 @@
                       {{ request()->routeIs('invoices.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
                 <i class="fas fa-file-invoice w-5"></i>
                 <span>Invoices</span>
+            </a>
+        @endif
+
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
+            <a href="{{ route('recurring.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('recurring.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-sync w-5"></i>
+                <span>Recurring</span>
+            </a>
+        @endif
+
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
+            <a href="{{ route('estimates.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('estimates.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-file-contract w-5"></i>
+                <span>Estimates</span>
             </a>
         @endif
 
@@ -83,6 +110,15 @@
             <i class="fas fa-bell w-5"></i>
             <span>Notifications</span>
         </a>
+
+        @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager']))
+            <a href="{{ route('templates.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('templates.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-palette w-5"></i>
+                <span>Templates</span>
+            </a>
+        @endif
 
         <!-- Settings - Admin, Developer, Manager -->
         @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager']))

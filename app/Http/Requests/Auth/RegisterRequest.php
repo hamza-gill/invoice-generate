@@ -35,6 +35,7 @@ class RegisterRequest extends FormRequest
             ],
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
+            'company_name' => ['required', 'string', 'max:100'],
             'phone' => ['required'],
             'terms' => ['accepted'],
             'privacy' => ['accepted'],

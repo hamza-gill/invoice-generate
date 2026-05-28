@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use App\Traits\WebhookEventTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
-    use HasFactory,WebhookEventTrait;
+    use BelongsToOrganization, HasFactory, WebhookEventTrait;
+
     protected $fillable = [
+        'organization_id',
         'user_id',
         'customer_id',
         'invoice_number',
@@ -32,11 +34,16 @@ class Invoice extends Model
         'rush_description',
         'rush_fee',
         'discount',
-        'rush_enabled_value'
+        'rush_enabled_value',
+        'invoice_template_id',
+        'custom_fields',
+        'recurring_invoice_id',
+        'estimate_id',
     ];
 
     protected $casts = [
         'gateway_response' => 'array',
+        'custom_fields' => 'array',
     ];
 
     public function getTotalWithRushAttribute()
@@ -44,6 +51,16 @@ class Invoice extends Model
         return $this->amount + ($this->rush_fee ?? 0);
     }
 
+
+    public function template()
+    {
+        return $this->belongsTo(InvoiceTemplate::class, 'invoice_template_id');
+    }
+
+    public function recurringInvoice()
+    {
+        return $this->belongsTo(RecurringInvoice::class);
+    }
 
     public function customer()
     {
@@ -109,8 +126,7 @@ class Invoice extends Model
     public static function consumeNextInvoiceNumber()
     {
         return DB::transaction(function () {
-            // Get the latest settings row directly from DB
-            $settings = Setting::first();
+            $settings = Setting::query()->first();
 
             // Fallback if not set
             $currentNumber = $settings->starting_invoice_number ?? 'INV-' . date('Y') . '-001';

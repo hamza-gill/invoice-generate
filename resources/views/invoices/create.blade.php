@@ -35,6 +35,31 @@
                 <form id="invoiceForm" action="{{ route('invoices.store') }}" method="POST" class="space-y-8">
                     @csrf
 
+                    {{-- TEMPLATE SELECTION --}}
+                    @if(isset($templates) && $templates->count())
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Invoice Template</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="invoice_template_id" value="" class="hidden peer" checked>
+                                <div class="border-2 border-gray-200 peer-checked:border-blue-600 rounded-xl p-4 text-center hover:border-blue-300 transition">
+                                    <i class="fas fa-file-alt text-2xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm font-medium">Default</p>
+                                </div>
+                            </label>
+                            @foreach($templates as $tpl)
+                            <label class="cursor-pointer">
+                                <input type="radio" name="invoice_template_id" value="{{ $tpl->id }}" class="hidden peer">
+                                <div class="border-2 border-gray-200 peer-checked:border-blue-600 rounded-xl p-4 text-center hover:border-blue-300 transition">
+                                    <div class="w-full h-16 rounded-lg mb-2" style="background: {{ $tpl->config['primary_color'] ?? '#3B82F6' }}20;"></div>
+                                    <p class="text-sm font-medium truncate">{{ $tpl->name }}</p>
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- CUSTOMER DETAILS --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex items-center justify-between mb-6">
@@ -198,7 +223,7 @@
                             </button>
                         </div>
 
-                        <div id="lineItemsContainer" class="space-y-4"></div>
+                        <div id="lineItemsContainer" class="space-y-4 sortable-container"></div>
 
                         <div class="mt-6 pt-6 border-t border-gray-200">
                             <div class="flex justify-end mb-4">
@@ -214,6 +239,17 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {{-- CUSTOM FIELDS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">Custom Fields</h3>
+                            <button type="button" id="addCustomField" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700">
+                                <i class="fas fa-plus mr-1"></i>Add Field
+                            </button>
+                        </div>
+                        <div id="customFieldsContainer" class="space-y-3"></div>
                     </div>
 
                     {{-- NOTES --}}
@@ -232,10 +268,11 @@
         </main>
     </div>
 
-    {{-- JS + Select2 --}}
+    {{-- JS + Select2 + SortableJS --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <style>
         .select2-container--default .select2-selection--single { height:46px !important; border:1px solid #d1d5db !important; border-radius:0.5rem !important; display:flex; align-items:center; }
@@ -309,28 +346,26 @@
                 const index = container.children.length;
 
                 const row = document.createElement('div');
-                row.className='grid grid-cols-12 gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200';
+                row.className='grid grid-cols-12 gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200 line-item-row';
                 row.innerHTML=`
-            <div class="col-span-7">
+            <div class="col-span-1 text-center cursor-grab drag-handle">
+                <i class="fas fa-grip-vertical text-gray-400"></i>
+            </div>
+            <div class="col-span-6">
                 <select class="product-select w-full border border-gray-300 rounded-lg"></select>
             </div>
-
             <div class="col-span-2">
-                <input type="number"  name="line_items[${index}][unit_price]"  step="0.01" class="line-price w-full px-3 py-2 border border-gray-300 rounded-lg text-right" value="0" required>
-                <input type="hidden" class="line-quantity w-full px-3 py-2 border border-gray-300 rounded-lg text-right" value="1" min="1" required>
-
+                <input type="number" name="line_items[${index}][unit_price]" step="0.01" class="line-price w-full px-3 py-2 border border-gray-300 rounded-lg text-right" value="0" required>
+                <input type="hidden" class="line-quantity" value="1" min="1">
             </div>
-
             <div class="col-span-2">
                 <input type="text" class="line-total w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-right font-semibold text-gray-800" value="$0.00" readonly data-value="0">
             </div>
-
             <div class="col-span-1 text-center">
                 <button type="button" class="remove-line text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
             </div>
-
             <input type="hidden" name="line_items[${index}][product_id]" class="line-product-id">
-            <input type="hidden" name="line_items[${index}][quantity]"  value="1" class="line-product-id">
+            <input type="hidden" name="line_items[${index}][quantity]" value="1">
             <input type="hidden" name="line_items[${index}][description]" class="line-description">
         `;
                 container.appendChild(row);
@@ -388,6 +423,40 @@
             addBtn.addEventListener('click', addLineItem);
             document.getElementById('discount').addEventListener('input', updateTotal);
             updateTotal();
+
+            new Sortable(container, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'bg-blue-50',
+                onEnd: function() {
+                    container.querySelectorAll('.line-item-row').forEach((row, i) => {
+                        row.querySelectorAll('[name]').forEach(el => {
+                            el.name = el.name.replace(/line_items\[\d+\]/, `line_items[${i}]`);
+                        });
+                    });
+                }
+            });
+
+            // Custom Fields
+            const cfContainer = document.getElementById('customFieldsContainer');
+            document.getElementById('addCustomField').addEventListener('click', function() {
+                const idx = cfContainer.children.length;
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-12 gap-3 items-center';
+                row.innerHTML = `
+                    <div class="col-span-5">
+                        <input type="text" name="custom_fields[${idx}][label]" placeholder="Field name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div class="col-span-6">
+                        <input type="text" name="custom_fields[${idx}][value]" placeholder="Value" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div class="col-span-1 text-center">
+                        <button type="button" class="remove-cf text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                cfContainer.appendChild(row);
+                row.querySelector('.remove-cf').addEventListener('click', () => row.remove());
+            });
 
         });
 

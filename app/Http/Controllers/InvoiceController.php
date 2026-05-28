@@ -6,6 +6,9 @@ use App\Http\Requests\Invoice\StoreInvoiceRequest;
 use App\Mail\SendInvoiceMail;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\InvoiceTemplate;
+use App\Models\Setting;
+use App\Services\InvoiceTemplateRenderer;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -39,7 +42,10 @@ class InvoiceController extends Controller
     {
         $this->authorize('create', Invoice::class);
         $customers = Customer::latest()->first();
-        return view('invoices.create', compact('customers'));
+        $templates = InvoiceTemplate::availableFor(auth()->user()->organization_id)
+            ->orderBy('sort_order')
+            ->get();
+        return view('invoices.create', compact('customers', 'templates'));
     }
 
     /**
@@ -79,27 +85,28 @@ class InvoiceController extends Controller
             $issueDate = Carbon::parse($request->input('issue_date'));
             $dueDate = $issueDate->copy()->addYear();
 
-            // Create invoice (excluding rush fee from total)
+            $customFields = $request->input('custom_fields')
+                ? array_values(array_filter($request->input('custom_fields'), fn($f) => !empty($f['label'])))
+                : null;
+
             $invoice = Invoice::create([
                 'user_id'             => auth()->id(),
                 'customer_id'         => $customer->id,
                 'invoice_number'      => $invoiceNumber,
                 'description'         => $request->input('description') ?? '',
-                'amount'              => 0, // will update later
+                'amount'              => 0,
                 'status'              => 'sent',
                 'issue_date'          => $issueDate,
                 'due_date'            => $dueDate,
                 'note'                => $request->input('notes') ?? '',
                 'project_address'     => $request->input('project_address') ?? '',
-
-                // Rush Add-On fields
                 'enable_rush_addon'   => (bool) $request->input('enable_rush_addon', false),
                 'rush_delivery_type'  => $request->input('rush_delivery_type'),
                 'rush_description'    => $request->input('rush_description'),
                 'rush_fee'            => $request->input('rush_fee'),
-
-                // ✅ DISCOUNT field
                 'discount'            => $request->input('discount', 0),
+                'invoice_template_id' => $request->input('invoice_template_id') ?: null,
+                'custom_fields'       => $customFields,
             ]);
 
             $invoice->consumeNextInvoiceNumber();
@@ -161,15 +168,19 @@ class InvoiceController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Invoice $invoice)
+    public function show(Invoice $invoice, InvoiceTemplateRenderer $renderer)
     {
         $this->authorize('view', $invoice);
-        $invoice->load(['customer', 'items', 'activities']);
+        $invoice->load(['customer', 'items.product', 'activities', 'template']);
 
-        $invoice->subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->unit_price);
-        $invoice->taxRate = 0.1;
-        $invoice->taxAmount = $invoice->subtotal * $invoice->taxRate;
-        $invoice->total = $invoice->subtotal + $invoice->taxAmount;
+        $invoice->subtotal = $invoice->items->sum(fn ($item) => $item->quantity * $item->amount);
+        $settings = Setting::withoutGlobalScopes()
+            ->where('organization_id', $invoice->organization_id)
+            ->first();
+        $taxRate = ($settings->enable_tax ?? false) ? (($settings->tax_percentage ?? 0) / 100) : 0;
+        $rushFee = $invoice->rush_enabled_value ? (float) ($invoice->rush_fee ?? 0) : 0;
+        $invoice->taxAmount = ($invoice->subtotal + $rushFee) * $taxRate;
+        $invoice->total = max(0, $invoice->subtotal + $rushFee + $invoice->taxAmount - (float) ($invoice->discount ?? 0));
 
         $invoice->status_color = match ($invoice->status) {
             'sent' => 'bg-blue-100 text-blue-600',
@@ -178,7 +189,9 @@ class InvoiceController extends Controller
             default => 'bg-gray-100 text-gray-600',
         };
 
-        return view('invoices.show', compact('invoice'));
+        $documentData = $this->invoiceDocumentViewData($invoice, $renderer, $settings);
+
+        return view('invoices.show', array_merge(compact('invoice'), $documentData));
     }
 
     public function search(Request $request)
@@ -366,11 +379,24 @@ class InvoiceController extends Controller
      * Download invoice as PDF.
      */
 
-    public function downloadPdf(Invoice $invoice, Request $request)
+    public function downloadPdf(Invoice $invoice, Request $request, InvoiceTemplateRenderer $renderer)
     {
         try {
+            $invoice->load(['customer', 'items.product']);
+            $settings = Setting::withoutGlobalScopes()
+                ->where('organization_id', $invoice->organization_id)
+                ->first();
+            $html = $renderer->renderForPdf($invoice, $settings);
 
-            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+            if ($html !== '') {
+                $pdf = Pdf::loadHTML($html)
+                    ->setPaper('a4', 'portrait')
+                    ->setOption('isHtml5ParserEnabled', true)
+                    ->setOption('isRemoteEnabled', true)
+                    ->setOption('defaultFont', 'DejaVu Sans');
+            } else {
+                $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+            }
 
             $invoice->logActivity(
                 'downloaded',
@@ -430,9 +456,19 @@ class InvoiceController extends Controller
     }
 
 
-    public function public(Invoice $invoice)
+    public function public(Invoice $invoice, InvoiceTemplateRenderer $renderer)
     {
-        return view('invoices.public', compact('invoice'));
+        $invoice->load(['customer', 'items.product']);
+        $globalSettings = Setting::withoutGlobalScopes()
+            ->where('organization_id', $invoice->organization_id)
+            ->first();
+
+        $documentData = $this->invoiceDocumentViewData($invoice, $renderer, $globalSettings);
+
+        return view('invoices.public', array_merge(
+            compact('invoice', 'globalSettings'),
+            $documentData
+        ));
     }
 
     /**
@@ -454,6 +490,23 @@ class InvoiceController extends Controller
             'Invoice #' . $invoice->invoice_number . ' was marked as void by ' . (auth()->user()->name ?? 'System') . '.'
         );
         return response()->json(['message' => 'Invoice voided successfully.']);
+    }
+
+    /**
+     * @return array{invoiceDocumentHtml: string, invoiceDocumentSrcdoc: string, invoiceTemplate: ?InvoiceTemplate}
+     */
+    private function invoiceDocumentViewData(Invoice $invoice, InvoiceTemplateRenderer $renderer, ?Setting $settings): array
+    {
+        $invoiceTemplate = $renderer->resolveForInvoice($invoice);
+        $html = $renderer->render($invoice, $settings);
+
+        return [
+            'invoiceDocumentHtml' => $html,
+            'invoiceDocumentSrcdoc' => $html !== ''
+                ? htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                : '',
+            'invoiceTemplate' => $invoiceTemplate,
+        ];
     }
 
     public function reports(Request $request)

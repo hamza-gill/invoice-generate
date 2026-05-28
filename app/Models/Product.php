@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use App\Traits\WebhookEventTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasFactory,WebhookEventTrait;
+    use BelongsToOrganization, HasFactory, WebhookEventTrait;
+
     protected $fillable = [
+        'organization_id',
         'name',
         'description',
         'price',

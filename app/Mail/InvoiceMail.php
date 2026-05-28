@@ -2,6 +2,8 @@
 namespace App\Mail;
 
 use App\Models\Invoice;
+use App\Models\Setting;
+use App\Services\InvoiceTemplateRenderer;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -24,9 +26,20 @@ class InvoiceMail extends Mailable
 
     public function build()
     {
-        $pdf = Pdf::loadView('invoices.pdf', [
-            'invoice' => $this->invoice
-        ]);
+        $this->invoice->load(['customer', 'items.product']);
+        $settings = Setting::withoutGlobalScopes()
+            ->where('organization_id', $this->invoice->organization_id)
+            ->first();
+
+        $renderer = app(InvoiceTemplateRenderer::class);
+        $html = $renderer->renderForPdf($this->invoice, $settings);
+
+        $pdf = $html !== ''
+            ? Pdf::loadHTML($html)
+                ->setPaper('a4', 'portrait')
+                ->setOption('isHtml5ParserEnabled', true)
+                ->setOption('defaultFont', 'DejaVu Sans')
+            : Pdf::loadView('invoices.pdf', ['invoice' => $this->invoice]);
 
         return $this->subject('Invoice #' . $this->invoice->invoice_number)
             ->view('emails.invoice')

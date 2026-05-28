@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use App\Traits\WebhookEventTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    use HasFactory,WebhookEventTrait;
+    use BelongsToOrganization, HasFactory, WebhookEventTrait;
 
     protected $fillable = [
+        'organization_id',
         'stripe_customer_id',
         'first_name',
         'last_name',

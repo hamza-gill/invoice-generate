@@ -220,4 +220,22 @@ class SettingController extends Controller
         $user->save();
         return back()->with('success', 'Password updated successfully!');
     }
+
+    public function togglePaymentGateway(Request $request)
+    {
+        $this->authorize('updateIntegration', \App\Models\Setting::class);
+
+        $organization = Auth::user()->organization;
+        $plan = $organization?->activeSubscription?->plan;
+
+        if (! $plan?->payment_gateway_enabled) {
+            return back()->with('error', 'Payment gateway is not included in your current plan. Please upgrade.');
+        }
+
+        $setting = Setting::firstOrNew();
+        $setting->payment_gateway_enabled = $request->boolean('payment_gateway_enabled');
+        $setting->save();
+
+        return back()->with('success', 'Payment gateway setting updated.');
+    }
 }

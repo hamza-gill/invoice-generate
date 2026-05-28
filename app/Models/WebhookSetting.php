@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class WebhookSetting extends Model
 {
-    use HasFactory;
+    use BelongsToOrganization, HasFactory;
 
     protected $table = 'webhook_settings';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
+        'organization_id',
         'webhook_url',
         'webhook_secret',
 

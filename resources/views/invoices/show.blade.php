@@ -41,6 +41,14 @@
     </header>
 
     <main class="flex-1 overflow-y-auto p-8">
+        <div class="max-w-5xl mx-auto">
+            @if(!empty($invoiceDocumentSrcdoc))
+                @include('invoices.partials.template-document', [
+                    'invoiceDocumentSrcdoc' => $invoiceDocumentSrcdoc,
+                    'templateName' => $invoiceTemplate?->name,
+                    'invoiceNumber' => $invoice->invoice_number,
+                ])
+            @else
         <div class="max-w-4xl mx-auto bg-white p-12 rounded-xl shadow-sm border border-gray-100" id="invoiceContent">
 
             <!-- Header Section -->
@@ -195,6 +203,20 @@
                 </div>
             </div>
 
+            @if($invoice->custom_fields && count($invoice->custom_fields))
+            <div class="mt-8 border-t border-gray-200 pt-6">
+                <h3 class="font-bold text-gray-800 mb-3">Additional Information</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    @foreach($invoice->custom_fields as $field)
+                        <div class="flex justify-between py-2 px-4 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">{{ $field['label'] }}</span>
+                            <span class="text-gray-800">{{ $field['value'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <div class="mt-8 border-t border-gray-200 pt-8 text-sm">
                 @if(!empty($invoice->note))
                     <div class="mb-6">
@@ -217,6 +239,9 @@
                     </div>
                 @endif
             </div>
+
+        </div>
+            @endif
 
             @include('invoices.partials.activity-log', ['invoice' => $invoice])
 

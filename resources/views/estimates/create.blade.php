@@ -1,0 +1,357 @@
+@extends('layouts.auth.app')
+
+@section('title', 'Create Estimate - ' . ($globalSettings->company_name ?? config('app.name')))
+@php($hideNavbar = true)
+
+@section('content')
+    <div class="min-h-screen bg-gray-50 flex flex-col">
+
+        {{-- Header --}}
+        <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
+            <div class="flex items-center space-x-4">
+                <a href="{{ route('estimates.index') }}" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="text-xl font-bold text-gray-800">Create New Estimate</h2>
+            </div>
+        </header>
+
+        {{-- Main --}}
+        <main class="p-8">
+            <div class="max-w-5xl mx-auto space-y-8">
+
+                {{-- Validation Errors --}}
+                @if ($errors->any())
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <ul class="list-disc pl-5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form id="estimateForm" action="{{ route('estimates.store') }}" method="POST" class="space-y-8">
+                    @csrf
+                    <input type="hidden" name="action" id="formAction" value="draft">
+
+                    {{-- CUSTOMER DETAILS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Customer Details</h3>
+                            <a href="{{ route('customers.create') }}" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                                <i class="fas fa-user-plus mr-1"></i> Add New Customer
+                            </a>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6 mb-6">
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Customer</label>
+                                <select id="customerSelect" name="customer_id" class="w-full"></select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                <input type="text" id="customer_first_name" name="first_name" value="{{ old('first_name') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                <input type="text" id="customer_last_name" name="last_name" value="{{ old('last_name') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                                <input type="text" id="customer_company_name" name="company_name" value="{{ old('company_name') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                                <input type="email" id="customer_email" name="email" value="{{ old('email') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                                <input type="text" id="customer_address" name="address" value="{{ old('address') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                                <input type="text" id="customer_city" name="city" value="{{ old('city') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                                <input type="text" id="customer_state" name="state" value="{{ old('state') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Zip Code *</label>
+                                <input type="text" id="customer_postal_code" name="postal_code" value="{{ old('postal_code') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <input type="hidden" name="country" value="US">
+                        </div>
+                    </div>
+
+                    {{-- PROJECT ADDRESS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Project Address</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Project Address</label>
+                            <input type="text" id="project_address" name="project_address" value="{{ old('project_address') }}" placeholder="Start typing the address..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" autocomplete="off">
+                            <p class="text-xs text-gray-500 mt-2">Start typing to search for an address — or type it manually.</p>
+                        </div>
+                    </div>
+
+                    {{-- ESTIMATE DETAILS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-6">Estimate Details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Estimate Number *</label>
+                                <input type="text" name="estimate_number" value="{{ old('estimate_number', $nextEstimateNumber ?? 'EST-001') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Issue Date *</label>
+                                <input type="date" name="issue_date" value="{{ old('issue_date', now()->format('Y-m-d')) }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Valid Until</label>
+                                <input type="date" name="valid_until" value="{{ old('valid_until', now()->addDays(30)->format('Y-m-d')) }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- LINE ITEMS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">Line Items</h3>
+                            <button type="button" id="addLineItem" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>Add Line Item
+                            </button>
+                        </div>
+
+                        <div id="lineItemsContainer" class="space-y-4"></div>
+
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="flex justify-end mb-4">
+                                <div class="w-64 text-md text-gray-800">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Discount ($)</label>
+                                    <input type="number" step="0.01" id="discount" name="discount" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-right">
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <div class="w-64 text-lg font-semibold text-gray-800 flex justify-between">
+                                    <span>Total:</span>
+                                    <span id="totalAmount">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- CUSTOM FIELDS --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-sliders-h text-blue-600 mr-2"></i>Custom Fields
+                            </h3>
+                            <button type="button" id="addCustomField" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 border border-gray-200">
+                                <i class="fas fa-plus mr-1"></i>Add Field
+                            </button>
+                        </div>
+
+                        <div id="customFieldsContainer" class="space-y-3"></div>
+
+                        <p class="text-xs text-gray-400 mt-3" id="noFieldsText">
+                            <i class="fas fa-info-circle mr-1"></i>Add custom key-value fields to include extra information on the estimate.
+                        </p>
+                    </div>
+
+                    {{-- NOTES --}}
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Notes</h3>
+                        <textarea name="notes" id="notes" rows="4" placeholder="Add any additional notes for this estimate..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">{{ old('notes') }}</textarea>
+                    </div>
+
+                    {{-- ACTION BUTTONS --}}
+                    <div class="flex justify-end space-x-4">
+                        <a href="{{ route('estimates.index') }}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Cancel</a>
+                        <button type="submit" onclick="document.getElementById('formAction').value='draft'" class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700">
+                            <i class="fas fa-save mr-2"></i>Save as Draft
+                        </button>
+                        <button type="submit" onclick="document.getElementById('formAction').value='send'" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+                            <i class="fas fa-paper-plane mr-2"></i>Save & Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    {{-- JS + Select2 --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+
+    <style>
+        .select2-container--default .select2-selection--single { height:46px !important; border:1px solid #d1d5db !important; border-radius:0.5rem !important; display:flex; align-items:center; }
+        .select2-selection__arrow { top:8px !important; right:8px !important; }
+        .select2-container { width:100% !important; }
+        .select2-results__options { max-height:350px !important; width:100% !important; }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+
+            // CUSTOMER Select2
+            $('#customerSelect').select2({
+                placeholder: 'Search customer...',
+                ajax: {
+                    url: '{{ route("customers.fetch") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params){ return {q: params.term}; },
+                    processResults: function(response){
+                        if(response.success){
+                            return {
+                                results: response.data.map(c => ({
+                                    id: c.id, text: c.text,
+                                    first_name: c.first_name, last_name: c.last_name,
+                                    email: c.email, address: c.address, city: c.city,
+                                    company_name: c.company_name, country: c.country,
+                                    postal_code: c.postal_code, state: c.state
+                                }))
+                            };
+                        }
+                        return {results: []};
+                    },
+                    cache: true
+                }
+            });
+
+            $('#customerSelect').on('select2:select', function(e){
+                const data = e.params.data;
+                $('#customer_first_name').val(data.first_name);
+                $('#customer_last_name').val(data.last_name);
+                $('#customer_company_name').val(data.company_name);
+                $('#customer_email').val(data.email);
+                $('#customer_address').val(data.address);
+                $('#customer_city').val(data.city);
+                $('#customer_state').val(data.state);
+                $('#customer_postal_code').val(data.postal_code);
+            });
+
+            // LINE ITEMS
+            const container = document.getElementById('lineItemsContainer');
+            const addBtn = document.getElementById('addLineItem');
+            const totalDisplay = document.getElementById('totalAmount');
+
+            function updateTotal(){
+                let total = 0;
+                document.querySelectorAll('.line-total').forEach(el => { total += parseFloat(el.dataset.value||0); });
+                const discount = parseFloat(document.getElementById('discount')?.value||0);
+                let finalTotal = Math.max(0, total - discount);
+                totalDisplay.textContent = `$${finalTotal.toFixed(2)}`;
+            }
+
+            function addLineItem(){
+                const index = container.children.length;
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-12 gap-4 items-center bg-gray-50 p-4 rounded-lg border border-gray-200';
+                row.innerHTML = `
+                    <div class="col-span-7">
+                        <select class="product-select w-full border border-gray-300 rounded-lg"></select>
+                    </div>
+                    <div class="col-span-2">
+                        <input type="number" name="line_items[${index}][unit_price]" step="0.01" class="line-price w-full px-3 py-2 border border-gray-300 rounded-lg text-right" value="0" required>
+                        <input type="hidden" class="line-quantity" value="1">
+                    </div>
+                    <div class="col-span-2">
+                        <input type="text" class="line-total w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-right font-semibold text-gray-800" value="$0.00" readonly data-value="0">
+                    </div>
+                    <div class="col-span-1 text-center">
+                        <button type="button" class="remove-line text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <input type="hidden" name="line_items[${index}][product_id]" class="line-product-id">
+                    <input type="hidden" name="line_items[${index}][quantity]" value="1">
+                    <input type="hidden" name="line_items[${index}][description]" class="line-description">
+                `;
+                container.appendChild(row);
+
+                const qty = row.querySelector('.line-quantity');
+                const price = row.querySelector('.line-price');
+                const total = row.querySelector('.line-total');
+                const productSelect = row.querySelector('.product-select');
+                const desc = row.querySelector('.line-description');
+                const productId = row.querySelector('.line-product-id');
+
+                function recalcLineTotal(){
+                    const lineTotal = parseFloat(qty.value||0) * parseFloat(price.value||0);
+                    total.value = `$${lineTotal.toFixed(2)}`;
+                    total.dataset.value = lineTotal;
+                    updateTotal();
+                }
+
+                qty.addEventListener('input', recalcLineTotal);
+                price.addEventListener('input', recalcLineTotal);
+
+                $(productSelect).select2({
+                    placeholder: 'Search product...',
+                    width: '100%',
+                    dropdownParent: $(productSelect).parent(),
+                    ajax: {
+                        url: '{{ route("products.fetch") }}',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function(params){ return {q: params.term}; },
+                        processResults: function(response){
+                            if(response.success){
+                                return {results: response.data.map(p => ({id: p.id, text: p.name, price: p.price, name: p.name})).concat([{id: 'other', text: 'Other (Custom Product)', price: 0, name: ''}])};
+                            }
+                            return {results: []};
+                        },
+                        cache: true
+                    }
+                });
+
+                $(productSelect).on('select2:select', function(e){
+                    const data = e.params.data;
+                    if(data.id === 'other'){
+                        desc.value = ''; price.value = 0; productId.value = '';
+                    } else {
+                        desc.value = data.name; price.value = data.price; productId.value = data.id;
+                    }
+                    recalcLineTotal();
+                });
+
+                row.querySelector('.remove-line').addEventListener('click', () => { row.remove(); updateTotal(); });
+                recalcLineTotal();
+            }
+
+            addBtn.addEventListener('click', addLineItem);
+            document.getElementById('discount').addEventListener('input', updateTotal);
+            updateTotal();
+
+            // CUSTOM FIELDS
+            const cfContainer = document.getElementById('customFieldsContainer');
+            const addCfBtn = document.getElementById('addCustomField');
+            const noFieldsText = document.getElementById('noFieldsText');
+
+            function updateNoFieldsText(){
+                noFieldsText.style.display = cfContainer.children.length === 0 ? '' : 'none';
+            }
+
+            addCfBtn.addEventListener('click', function(){
+                const index = cfContainer.children.length;
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3';
+                row.innerHTML = `
+                    <input type="text" name="custom_fields[${index}][key]" placeholder="Field name" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                    <input type="text" name="custom_fields[${index}][value]" placeholder="Value" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                    <button type="button" class="remove-cf text-red-500 hover:text-red-700 p-2"><i class="fas fa-times-circle text-lg"></i></button>
+                `;
+                cfContainer.appendChild(row);
+
+                row.querySelector('.remove-cf').addEventListener('click', () => { row.remove(); updateNoFieldsText(); });
+                updateNoFieldsText();
+            });
+
+            updateNoFieldsText();
+        });
+    </script>
+@endsection

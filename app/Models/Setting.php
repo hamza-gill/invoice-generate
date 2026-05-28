@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Services\TenantContext;
+use App\Traits\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
 class Setting extends Model
 {
+    use BelongsToOrganization;
+
     protected $fillable = [
+        'organization_id',
         'company_name',
         'tax_id',
         'country',
@@ -20,6 +25,7 @@ class Setting extends Model
         'tax_percentage',
         'stripe_public_key',
         'stripe_secret_key',
+        'payment_gateway_enabled',
         'webhook_url',
         'webhook_secret',
         'contact_email',
@@ -31,7 +37,9 @@ class Setting extends Model
         'enable_rush_delivery',
         'rush_delivery_options',
         'starting_invoice_number',
-        'google_places_key'
+        'google_places_key',
+        'default_template_id',
+        'custom_invoice_css',
     ];
 
     protected $casts = [
@@ -41,6 +49,7 @@ class Setting extends Model
         'enable_tax_id' => 'boolean',
         'enable_due_date' => 'boolean',
         'enable_rush_delivery' => 'boolean',
+        'payment_gateway_enabled' => 'boolean',
         'rush_delivery_options' => 'array',
         'tax_percentage' => 'decimal:2',
     ];
@@ -49,15 +58,15 @@ class Setting extends Model
     {
         // Handle cache refresh automatically when settings change
         static::saved(function ($setting) {
-            Cache::forget('app_settings');
-
-            Cache::rememberForever('app_settings', function () {
-                return Setting::first();
-            });
+            if ($setting->organization_id) {
+                Cache::forget('app_settings_' . $setting->organization_id);
+            }
         });
 
         static::deleted(function ($setting) {
-            Cache::forget('app_settings');
+            if ($setting->organization_id) {
+                Cache::forget('app_settings_' . $setting->organization_id);
+            }
         });
     }
 

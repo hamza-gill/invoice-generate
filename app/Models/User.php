@@ -28,7 +28,10 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
-        'invitation_token'
+        'invitation_token',
+        'organization_id',
+        'role',
+        'phone',
     ];
 
     /**
@@ -72,5 +75,15 @@ class User extends Authenticatable
     public function isDeveloper()
     {
         return $this->role === self::ROLE_DEVELOPER;
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function isOrganizationOwner(): bool
+    {
+        return $this->organization && $this->organization->owner_id === $this->id;
     }
 }

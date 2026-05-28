@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Invoice;
+use App\Models\Setting;
+use App\Services\InvoiceTemplateRenderer;
+use App\Services\InvoiceTemplateTheme;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\InvoiceRejectedMail;
 use Stripe\Stripe;
@@ -14,6 +17,7 @@ class InvoiceResponseController extends Controller
     public function respond(Request $request, Invoice $invoice)
     {
         $action = $request->query('action');
+        $globalSettings = $this->resolveSettings($invoice);
 
         // Mark user as responded
         $invoice->user_responded = now();
@@ -24,7 +28,7 @@ class InvoiceResponseController extends Controller
             $invoice->logActivity('viewed_rejected', 'Customer viewed already rejected invoice.');
             $invoice->notifyAction('viewed_rejected', 'Customer viewed already rejected invoice.', 'declined');
 
-            return view('invoices.rejected', compact('invoice'));
+            return view('invoices.rejected', compact('invoice', 'globalSettings'));
         }
 
         // ✅ 2. Already paid
@@ -61,7 +65,7 @@ class InvoiceResponseController extends Controller
                 $invoice->notifyAction('viewed_rejected', 'Customer viewed already rejected invoice.', 'viewed_rejected');
             }
 
-            return view('invoices.rejected', compact('invoice'));
+            return view('invoices.rejected', compact('invoice', 'globalSettings'));
         }
 
         // 5. Fallback for invalid actions
@@ -72,10 +76,13 @@ class InvoiceResponseController extends Controller
     }
 
     //  STEP 1: Review & accept page before payment
-    public function acceptPage(Invoice $invoice)
+    public function acceptPage(Invoice $invoice, InvoiceTemplateRenderer $renderer, InvoiceTemplateTheme $themeService)
     {
+        $globalSettings = $this->resolveSettings($invoice);
+        $invoice->load(['customer', 'items.product']);
+
         if ($invoice->status === 'declined') {
-            return view('invoices.rejected', compact('invoice'));
+            return view('invoices.rejected', compact('invoice', 'globalSettings'));
         }
 
         if (in_array($invoice->payment_status, ['paid', 'completed'])) {
@@ -86,12 +93,35 @@ class InvoiceResponseController extends Controller
         $invoice->logActivity('viewed_accept_page', 'Customer viewed invoice acceptance page.');
         $invoice->notifyAction('viewed_accept_page', 'Customer viewed invoice acceptance page.', 'accept_page');
 
-        return view('invoices.accept', compact('invoice'));
+        $html = $renderer->render($invoice, $globalSettings);
+        $invoiceTemplate = $renderer->resolveForInvoice($invoice);
+        $templateTheme = $themeService->forTemplate($invoiceTemplate);
+
+        return view('invoices.accept', [
+            'invoice' => $invoice,
+            'globalSettings' => $globalSettings,
+            'invoiceDocumentHtml' => $html,
+            'invoiceDocumentSrcdoc' => $html !== ''
+                ? htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                : '',
+            'invoiceTemplate' => $invoiceTemplate,
+            'templateTheme' => $templateTheme,
+        ]);
     }
 
     // ✅ STEP 2: Create Stripe session (includes rush fee if enabled)
     public function createPaymentSession(Request $request, Invoice $invoice)
     {
+        $tenantSettings = Setting::withoutGlobalScopes()
+            ->where('organization_id', $invoice->organization_id)
+            ->first();
+
+        if (! $tenantSettings?->payment_gateway_enabled || ! $tenantSettings?->stripe_secret_key) {
+            abort(403, 'Online payment is not enabled for this invoice.');
+        }
+
+        config(['settings' => $tenantSettings->toArray()]);
+
         // Subtotal
         $subtotal = $invoice->items->sum(fn($item) => $item->quantity * $item->amount);
 
@@ -188,14 +218,18 @@ class InvoiceResponseController extends Controller
 
     public function rejected(Invoice $invoice)
     {
+        $globalSettings = $this->resolveSettings($invoice);
+
         $invoice->logActivity('viewed_rejected_page', 'Customer viewed rejected confirmation page.');
         $invoice->notifyAction('viewed_rejected_page', 'Customer viewed rejected confirmation page.', 'viewed');
 
-        return view('invoices.rejected', compact('invoice'));
+        return view('invoices.rejected', compact('invoice', 'globalSettings'));
     }
 
     public function success(Invoice $invoice)
     {
+        $globalSettings = $this->resolveSettings($invoice);
+
         $invoice->update([
             'payment_status' => 'paid',
             'status' => 'paid',
@@ -204,14 +238,23 @@ class InvoiceResponseController extends Controller
         $invoice->logActivity('payment_success', 'Customer completed payment successfully.');
         $invoice->notifyAction('payment_success', 'Customer completed payment successfully.', 'paid');
 
-        return view('invoices.success', compact('invoice'));
+        return view('invoices.success', compact('invoice', 'globalSettings'));
     }
 
     public function cancel(Invoice $invoice)
     {
+        $globalSettings = $this->resolveSettings($invoice);
+
         $invoice->logActivity('payment_cancel', 'Customer canceled payment on Stripe.');
         $invoice->notifyAction('payment_cancel', 'Customer canceled payment on Stripe.', 'cancelled');
 
-        return view('invoices.cancel', compact('invoice'));
+        return view('invoices.cancel', compact('invoice', 'globalSettings'));
+    }
+
+    private function resolveSettings(Invoice $invoice): ?Setting
+    {
+        return Setting::withoutGlobalScopes()
+            ->where('organization_id', $invoice->organization_id)
+            ->first();
     }
 }

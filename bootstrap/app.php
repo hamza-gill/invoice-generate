@@ -35,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth'  => \App\Http\Middleware\Authenticate::class,
             'guest' => RedirectIfAuthenticated::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+            'tenant' => \App\Http\Middleware\SetTenantContext::class,
+            'subscription' => \App\Http\Middleware\EnsureActiveSubscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
