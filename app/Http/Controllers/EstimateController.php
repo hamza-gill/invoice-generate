@@ -8,9 +8,12 @@ use App\Models\EstimateItem;
 use App\Models\Invoice;
 use App\Models\Setting;
 use Carbon\Carbon;
+use App\Services\InvoiceTemplateRenderer;
+use App\Services\InvoiceTemplateTheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EstimateController extends Controller
 {
@@ -177,12 +180,9 @@ class EstimateController extends Controller
         return back()->with('success', 'Estimate marked as sent. Share the public link with your client.');
     }
 
-    public function publicView(string $token)
+    public function publicView(string $token, InvoiceTemplateRenderer $renderer, InvoiceTemplateTheme $themeService)
     {
-        $estimate = Estimate::withoutGlobalScopes()
-            ->where('client_token', $token)
-            ->with(['customer', 'items.product'])
-            ->firstOrFail();
+        $estimate = $this->resolvePublicEstimate($token);
 
         if ($estimate->status === 'sent') {
             $estimate->update(['status' => 'viewed']);
@@ -192,14 +192,26 @@ class EstimateController extends Controller
             ->where('organization_id', $estimate->organization_id)
             ->first();
 
-        return view('estimates.public', compact('estimate', 'globalSettings'));
+        $html = $renderer->renderEstimate($estimate, $globalSettings);
+        $invoiceTemplate = $renderer->resolveForEstimate($estimate);
+        $templateTheme = $themeService->forTemplate($invoiceTemplate);
+
+        return view('estimates.public', [
+            'estimate' => $estimate,
+            'globalSettings' => $globalSettings,
+            'publicKey' => $token,
+            'invoiceDocumentHtml' => $html,
+            'invoiceDocumentSrcdoc' => $html !== ''
+                ? htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                : '',
+            'invoiceTemplate' => $invoiceTemplate,
+            'templateTheme' => $templateTheme,
+        ]);
     }
 
     public function approve(string $token)
     {
-        $estimate = Estimate::withoutGlobalScopes()
-            ->where('client_token', $token)
-            ->firstOrFail();
+        $estimate = $this->resolvePublicEstimate($token);
 
         if (!$estimate->canBeApproved()) {
             return back()->with('error', 'This estimate can no longer be approved.');
@@ -215,9 +227,7 @@ class EstimateController extends Controller
 
     public function decline(Request $request, string $token)
     {
-        $estimate = Estimate::withoutGlobalScopes()
-            ->where('client_token', $token)
-            ->firstOrFail();
+        $estimate = $this->resolvePublicEstimate($token);
 
         $estimate->update([
             'status' => 'declined',
@@ -289,5 +299,25 @@ class EstimateController extends Controller
         $estimate->delete();
         return redirect()->route('estimates.index')
             ->with('success', 'Estimate deleted.');
+    }
+
+    protected function resolvePublicEstimate(string $key): Estimate
+    {
+        $query = Estimate::withoutGlobalScopes()
+            ->with(['customer', 'items.product']);
+
+        $estimate = ctype_digit($key)
+            ? $query->where('id', (int) $key)->first()
+            : $query->where('client_token', $key)->first();
+
+        if (!$estimate) {
+            abort(404);
+        }
+
+        if (!$estimate->client_token) {
+            $estimate->forceFill(['client_token' => Str::random(64)])->save();
+        }
+
+        return $estimate;
     }
 }

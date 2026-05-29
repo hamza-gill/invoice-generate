@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Estimate;
 use App\Models\Invoice;
 use App\Models\InvoiceTemplate;
 use App\Models\Setting;
@@ -9,6 +10,35 @@ use Carbon\Carbon;
 
 class InvoiceTemplateRenderer
 {
+    public function resolveForEstimate(Estimate $estimate): ?InvoiceTemplate
+    {
+        $estimate->loadMissing(['items.product', 'customer']);
+
+        if ($estimate->invoice_template_id) {
+            $template = InvoiceTemplate::find($estimate->invoice_template_id);
+            if ($template && $template->is_active) {
+                return $template;
+            }
+        }
+
+        $settings = Setting::withoutGlobalScopes()
+            ->where('organization_id', $estimate->organization_id)
+            ->first();
+
+        if ($settings?->default_template_id) {
+            $template = InvoiceTemplate::find($settings->default_template_id);
+            if ($template && $template->is_active) {
+                return $template;
+            }
+        }
+
+        return InvoiceTemplate::query()
+            ->where('is_active', true)
+            ->whereNull('organization_id')
+            ->orderBy('sort_order')
+            ->first();
+    }
+
     public function resolveForInvoice(Invoice $invoice): ?InvoiceTemplate
     {
         $invoice->loadMissing(['items.product', 'customer']);
@@ -72,6 +102,44 @@ class InvoiceTemplateRenderer
         }
 
         return $this->applyLayoutFixes($html);
+    }
+
+    public function renderEstimate(Estimate $estimate, ?Setting $settings = null): string
+    {
+        $template = $this->resolveForEstimate($estimate);
+
+        if (!$template || empty($template->html_layout)) {
+            return '';
+        }
+
+        $settings = $settings ?? Setting::withoutGlobalScopes()
+            ->where('organization_id', $estimate->organization_id)
+            ->first();
+
+        $html = $template->html_layout;
+        $replacements = $this->buildEstimateReplacements($estimate, $settings);
+        $html = str_replace(array_keys($replacements), array_values($replacements), $html);
+
+        if (!empty($template->css_styles)) {
+            if (stripos($html, '</head>') !== false) {
+                $html = str_replace('</head>', '<style>' . $template->css_styles . '</style></head>', $html);
+            } else {
+                $html = '<style>' . $template->css_styles . '</style>' . $html;
+            }
+        }
+
+        if (!empty($settings->custom_invoice_css)) {
+            $customCss = '<style>' . $settings->custom_invoice_css . '</style>';
+            if (stripos($html, '</head>') !== false) {
+                $html = str_replace('</head>', $customCss . '</head>', $html);
+            } else {
+                $html = $customCss . $html;
+            }
+        }
+
+        $html = $this->applyLayoutFixes($html);
+
+        return str_replace('>INVOICE<', '>ESTIMATE<', $html);
     }
 
     /**
@@ -276,7 +344,7 @@ class InvoiceTemplateRenderer
 
         if (!empty($invoice->custom_fields) && is_array($invoice->custom_fields)) {
             foreach ($invoice->custom_fields as $field) {
-                $key = trim($field['key'] ?? '');
+                $key = trim($field['key'] ?? $field['label'] ?? '');
                 $value = trim($field['value'] ?? '');
                 if ($key !== '' || $value !== '') {
                     $parts[] = ($key !== '' ? $key . ': ' : '') . $value;
@@ -322,6 +390,80 @@ class InvoiceTemplateRenderer
                 . '<td>' . $label . '</td>'
                 . '<td>' . e($invoice->rush_description ?? '') . '</td>'
                 . '<td style="text-align:right">' . $currency . number_format((float) $invoice->rush_fee, 2) . '</td>'
+                . '</tr>';
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function buildEstimateReplacements(Estimate $estimate, ?Setting $settings): array
+    {
+        $currency = $settings->base_currency ?? '$';
+        $subtotal = $estimate->items->sum(fn ($item) => (float) $item->quantity * (float) $item->amount);
+        $discount = (float) ($estimate->discount ?? 0);
+        $total = max(0, $subtotal - $discount);
+
+        $notesParts = [];
+        if (!empty($estimate->custom_fields) && is_array($estimate->custom_fields)) {
+            foreach ($estimate->custom_fields as $field) {
+                $key = trim($field['key'] ?? $field['label'] ?? '');
+                $value = trim($field['value'] ?? '');
+                if ($key !== '' || $value !== '') {
+                    $notesParts[] = ($key !== '' ? $key . ': ' : '') . $value;
+                }
+            }
+        }
+        if (!empty(trim($estimate->notes ?? ''))) {
+            $notesParts[] = trim($estimate->notes);
+        }
+        $notesText = $notesParts !== [] ? e(implode("\n\n", $notesParts)) : '—';
+        $termsText = $this->buildTermsText($settings);
+
+        return [
+            '{{invoice_number}}' => e($estimate->estimate_number),
+            '{{issue_date}}' => $estimate->issue_date
+                ? Carbon::parse($estimate->issue_date)->format('M d, Y')
+                : '',
+            '{{due_date}}' => $estimate->valid_until
+                ? Carbon::parse($estimate->valid_until)->format('M d, Y')
+                : '',
+            '{{status}}' => strtoupper($estimate->status ?? 'N/A'),
+            '{{customer_name}}' => e($estimate->customer->full_name ?? 'N/A'),
+            '{{customer_email}}' => e($estimate->customer->email ?? ''),
+            '{{customer_address}}' => e($estimate->customer->address ?? ''),
+            '{{company_name}}' => e($settings->company_name ?? config('app.name')),
+            '{{company_address}}' => e($settings->address ?? ''),
+            '{{company_email}}' => e($settings->contact_email ?? ''),
+            '{{tax_id}}' => e($settings->tax_id ?? ''),
+            '{{project_address}}' => e($estimate->project_address ?? ''),
+            '{{subtotal}}' => $currency . number_format($subtotal, 2),
+            '{{tax_amount}}' => $currency . number_format(0, 2),
+            '{{tax_percentage}}' => $settings->tax_percentage ?? '0',
+            '{{discount}}' => $currency . number_format($discount, 2),
+            '{{rush_fee}}' => $currency . number_format(0, 2),
+            '{{total}}' => $currency . number_format($total, 2),
+            '{{notes}}' => $notesText,
+            '{{terms}}' => $termsText,
+            '{{invoice_notes}}' => e($settings->invoice_notes ?? ''),
+            '{{line_items_rows}}' => $this->buildEstimateLineItemsRows($estimate, $currency),
+            '{{custom_fields_html}}' => $notesText,
+        ];
+    }
+
+    protected function buildEstimateLineItemsRows(Estimate $estimate, string $currency): string
+    {
+        $rows = '';
+        foreach ($estimate->items as $item) {
+            $lineTotal = (float) $item->quantity * (float) $item->amount;
+            $service = e($item->activity ?: ($item->product->name ?? 'Item'));
+            $description = e($item->description ?: ($item->product->description ?? ''));
+            $rows .= '<tr>'
+                . '<td>' . $service . '</td>'
+                . '<td>' . $description . '</td>'
+                . '<td style="text-align:right">' . $currency . number_format($lineTotal, 2) . '</td>'
                 . '</tr>';
         }
 
