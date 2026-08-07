@@ -214,6 +214,10 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
         return view('help');
     })->name('help');
 
+    Route::get('/settings/tutorial', function () {
+        return view('settings.tutorial');
+    })->name('settings.tutorial');
+
     // Invoice Templates
     Route::prefix('templates')->name('templates.')->group(function () {
         Route::get('/', [InvoiceTemplateController::class, 'index'])->name('index');

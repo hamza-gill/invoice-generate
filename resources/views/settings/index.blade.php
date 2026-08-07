@@ -6,9 +6,15 @@
     @can('view', $setting)
         <div class="max-w-7xl mx-auto">
             <!-- 🔹 Page Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-                <p class="text-gray-500 mt-1">Manage your organization, integrations, and preferences.</p>
+            <div class="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+                    <p class="text-gray-500 mt-1">Manage your organization, integrations, and preferences.</p>
+                </div>
+                <a href="{{ route('settings.tutorial') }}"
+                   class="bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-blue-700 transition shrink-0">
+                    <i class="fas fa-book-open mr-2"></i> Configuration Guide
+                </a>
             </div>
 
             {{-- Display Validation Errors --}}
