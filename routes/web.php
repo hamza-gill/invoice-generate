@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\MicrosoftController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EstimateController;
@@ -29,6 +30,66 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/pricing', [LandingController::class, 'pricing'])->name('pricing');
+Route::get('/terms', fn () => view('landing.terms'))->name('terms');
+Route::get('/privacy', fn () => view('landing.privacy'))->name('privacy');
+Route::get('/features', fn () => view('landing.features'))->name('features');
+Route::get('/integrations', fn () => view('landing.integrations'))->name('integrations');
+Route::get('/changelog', fn () => view('landing.changelog'))->name('changelog');
+Route::get('/about', fn () => view('landing.about'))->name('about');
+Route::get('/blog', fn () => view('landing.blog'))->name('blog');
+Route::get('/careers', fn () => view('landing.careers'))->name('careers');
+Route::get('/docs', fn () => view('landing.docs'))->name('docs');
+Route::get('/help-center', fn () => view('landing.help-center'))->name('help-center');
+Route::get('/status', fn () => view('landing.status'))->name('status');
+Route::get('/api', fn () => view('landing.api'))->name('api');
+Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+Route::get('/robots.txt', function () {
+    $rules = implode("\n", [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /login',
+        'Disallow: /register',
+        'Disallow: /forgot-password',
+        'Disallow: /reset-password',
+        'Disallow: /dashboard',
+        'Disallow: /invoices',
+        'Disallow: /settings',
+        'Disallow: /users',
+        'Disallow: /products',
+        'Disallow: /recurring',
+        'Disallow: /estimates',
+        '',
+        'Sitemap: ' . url('/sitemap.xml'),
+    ]);
+
+    return response($rules)->header('Content-Type', 'text/plain');
+});
+
+Route::get('/sitemap.xml', function () {
+    $urls = [
+        ['loc' => '/', 'freq' => 'daily', 'priority' => '1.0'],
+        ['loc' => '/pricing', 'freq' => 'weekly', 'priority' => '0.9'],
+        ['loc' => '/features', 'freq' => 'weekly', 'priority' => '0.9'],
+        ['loc' => '/integrations', 'freq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => '/changelog', 'freq' => 'weekly', 'priority' => '0.7'],
+        ['loc' => '/about', 'freq' => 'monthly', 'priority' => '0.6'],
+        ['loc' => '/blog', 'freq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => '/careers', 'freq' => 'monthly', 'priority' => '0.5'],
+        ['loc' => '/docs', 'freq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => '/help-center', 'freq' => 'monthly', 'priority' => '0.7'],
+        ['loc' => '/status', 'freq' => 'daily', 'priority' => '0.5'],
+        ['loc' => '/api', 'freq' => 'monthly', 'priority' => '0.7'],
+        ['loc' => '/contact', 'freq' => 'monthly', 'priority' => '0.6'],
+        ['loc' => '/terms', 'freq' => 'yearly', 'priority' => '0.3'],
+        ['loc' => '/privacy', 'freq' => 'yearly', 'priority' => '0.3'],
+    ];
+
+    return response()
+        ->view('sitemap', ['urls' => $urls])
+        ->header('Content-Type', 'application/xml');
+});
 
 Route::bind('invoice', function ($value) {
     return Invoice::withoutGlobalScopes()->findOrFail($value);
@@ -72,8 +133,26 @@ Route::middleware('guest')->group(function () {
 */
 Route::middleware(['auth', 'tenant'])->group(function () {
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
-    Route::post('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+    Route::get('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkoutPage'])->name('subscription.checkout');
+    Route::post('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkout'])->name('subscription.checkout.process');
     Route::get('/subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Platform Admin Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('platform')->name('platform.')->group(function () {
+    Route::get('/login', [App\Http\Controllers\PlatformAdminAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [App\Http\Controllers\PlatformAdminAuthController::class, 'login']);
+
+    Route::middleware(['auth:platform'])->group(function () {
+        Route::get('/', [App\Http\Controllers\PlatformAdminSettingController::class, 'index'])->name('settings');
+        Route::get('/settings', [App\Http\Controllers\PlatformAdminSettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [App\Http\Controllers\PlatformAdminSettingController::class, 'update'])->name('settings.update');
+        Route::post('/logout', [App\Http\Controllers\PlatformAdminAuthController::class, 'logout'])->name('logout');
+    });
 });
 
 Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
@@ -95,6 +174,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     });
 
     Route::get('/reports', [InvoiceController::class, 'reports'])->name('reports');
+    Route::post('/reports/export', [InvoiceController::class, 'exportCsv'])->name('reports.export');
 
     Route::prefix('customers')->group(function () {
         Route::get('/', [CustomerController::class, 'index'])->name('customers.index');
@@ -125,6 +205,8 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings/organization', [SettingController::class, 'updateOrganization'])->name('settings.organization.update');
     Route::post('/settings/integration', [SettingController::class, 'updateIntegration'])->name('settings.integration.update');
+    Route::post('/settings/mail', [SettingController::class, 'updateMail'])->name('settings.mail.update');
+    Route::post('/settings/mail/test', [SettingController::class, 'sendTestMail'])->name('settings.mail.test');
     Route::post('/settings/invoice', [SettingController::class, 'updateInvoice'])->name('settings.invoice.update');
     Route::post('/settings/payment-gateway', [SettingController::class, 'togglePaymentGateway'])->name('settings.payment-gateway.toggle');
 
@@ -185,10 +267,13 @@ Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken
 Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->post('/webhook/platform', [PlatformStripeWebhookController::class, 'handle']);
 
+Route::withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->post('/webhook/{identifier}', [App\Http\Controllers\OrganizationWebhookController::class, 'handle']);
+
 // Public Estimate links (no auth)
 Route::get('/estimate/{token}', [EstimateController::class, 'publicView'])->name('estimates.public');
 Route::post('/estimate/{token}/approve', [EstimateController::class, 'approve'])->name('estimates.approve');
 Route::post('/estimate/{token}/decline', [EstimateController::class, 'decline'])->name('estimates.decline');
 
-Route::get('/auth/redirect', [MicrosoftController::class, 'redirectToMicrosoft']);
+Route::get('/auth/redirect', [MicrosoftController::class, 'redirectToMicrosoft'])->name('auth.redirect');
 Route::get('/auth/callback', [MicrosoftController::class, 'handleCallback']);

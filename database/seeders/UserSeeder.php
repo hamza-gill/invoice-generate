@@ -14,9 +14,9 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $organization = Organization::firstOrCreate(
-            ['slug' => 'reconx-demo'],
+            ['slug' => 'inveqi-demo'],
             [
-                'name' => 'ReconX Demo',
+                'name' => 'Inveqi Demo',
                 'email' => 'admin@example.com',
                 'status' => 'active',
             ]
@@ -58,12 +58,12 @@ class UserSeeder extends Seeder
         Setting::withoutGlobalScopes()->updateOrCreate(
             ['organization_id' => $organization->id],
             [
-                'company_name' => 'ReconX',
+                'company_name' => 'Inveqi',
                 'tax_id' => '123-456-789',
                 'country' => 'United States',
                 'base_currency' => 'USD - US Dollar',
                 'address' => '123 Business Center, City',
-                'contact_email' => 'info@reconx.com',
+                'contact_email' => 'info@inveqi.com',
                 'stripe_public_key' => 'pk_test_demo123456',
                 'stripe_secret_key' => 'sk_test_demo123456',
                 'payment_gateway_enabled' => true,

@@ -1,4 +1,4 @@
-# ReconX Multi-Tenant Setup
+# Inveqi Multi-Tenant Setup
 
 This repository contains two Laravel 12 applications sharing one MySQL database:
 
@@ -32,7 +32,7 @@ php artisan key:generate
 ## Default Credentials
 
 **Platform Admin** (admin app at `/login`):
-- Email: `admin@reconx.com`
+- Email: `admin@inveqi.com`
 - Password: `Admin@123`
 
 **Demo Tenant** (tenant app at `/login`):

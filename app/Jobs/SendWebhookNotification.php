@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Organization;
 use App\Models\WebhookSetting;
 
 class SendWebhookNotification implements ShouldQueue
@@ -26,10 +27,21 @@ class SendWebhookNotification implements ShouldQueue
 
     public function handle(): void
     {
-        $setting = WebhookSetting::settings();
+        // Resolve which organization (account) this event belongs to.
+        $organizationId = $this->payload['organization_id'] ?? null;
+
+        // Each account has its own webhook settings + unique webhook identifier.
+        $setting = $organizationId
+            ? WebhookSetting::withoutGlobalScopes()->where('organization_id', $organizationId)->first()
+            : null;
+
+        // Fall back to a global/legacy setting if the account has no record yet.
+        if (!$setting) {
+            $setting = WebhookSetting::withoutGlobalScopes()->first();
+        }
 
         if (!$setting || !$setting->webhook_url) {
-            Log::warning("Webhook skipped — no webhook URL configured.");
+            Log::warning("Webhook skipped — no webhook URL configured for this account.");
             return;
         }
 
@@ -54,24 +66,43 @@ class SendWebhookNotification implements ShouldQueue
             return;
         }
 
-        try {
-            // Create signature (optional but recommended)
-            $signature = hash_hmac('sha256', json_encode($this->payload), $setting->webhook_secret ?? 'secret');
+        // Unique identifier of the account this webhook belongs to.
+        $identifier = null;
+        if ($organizationId) {
+            $identifier = Organization::withoutGlobalScopes()
+                ->whereKey($organizationId)
+                ->value('webhook_identifier');
+        }
 
+        // Payload with identification metadata so the receiver knows which account owns it.
+        $payload = $this->payload;
+        $payload['webhook'] = [
+            'event'                    => $this->event,
+            'organization_id'          => $organizationId,
+            'organization_identifier'  => $identifier,
+            'webhook_url'              => $setting->webhook_url,
+            'timestamp'                => now()->toIso8601String(),
+        ];
+
+        // Create signature (optional but recommended)
+        $signature = hash_hmac('sha256', json_encode($payload), $setting->webhook_secret ?: 'secret');
+
+        try {
             Http::withHeaders([
                 'X-Webhook-Event' => $this->event,
                 'X-Webhook-Signature' => $signature,
-                'X-Webhook-Secret' => $setting->webhook_secret,
-            ])->post($setting->webhook_url, [
-                'event' => $this->event,
-                'data' => $this->payload,
-                'timestamp' => now()->toIso8601String(),
-            ]);
+                'X-Webhook-Organization-Id' => $organizationId ? (string) $organizationId : null,
+                'X-Webhook-Identifier' => $identifier,
+            ])->post($setting->webhook_url, $payload);
 
-            Log::info("Webhook sent successfully for {$this->event}");
+            Log::info("Webhook sent successfully for {$this->event}", [
+                'organization_id' => $organizationId,
+                'url' => $setting->webhook_url,
+            ]);
         } catch (\Exception $e) {
             Log::error("Webhook failed for {$this->event}: {$e->getMessage()}", [
                 'event' => $this->event,
+                'organization_id' => $organizationId,
                 'url' => $setting->webhook_url,
             ]);
         }

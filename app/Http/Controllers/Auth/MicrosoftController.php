@@ -35,6 +35,7 @@ class MicrosoftController extends Controller
 
         $authorizationUrl = $provider->getAuthorizationUrl();
         Session::put('oauth2state', $provider->getState());
+        Session::put('oauth2org', auth()->check() ? auth()->user()->organization_id : null);
 
         return redirect($authorizationUrl);
     }
@@ -56,14 +57,19 @@ class MicrosoftController extends Controller
                 'code' => $request->get('code')
             ]);
 
-            // Save token in database (replace existing)
-            MicrosoftToken::truncate(); // keep only one record
+            $organizationId = Session::get('oauth2org');
+
+            // Save token for this organization (keep only one per org)
+            MicrosoftToken::where('organization_id', $organizationId)->delete();
             MicrosoftToken::create([
-                'access_token'  => $accessToken->getToken(),
-                'refresh_token' => $accessToken->getRefreshToken(),
-                'expires_in'    => $accessToken->getExpires(),
-                'expires_at'    => Carbon::createFromTimestamp($accessToken->getExpires())
+                'organization_id' => $organizationId,
+                'access_token'    => $accessToken->getToken(),
+                'refresh_token'   => $accessToken->getRefreshToken(),
+                'expires_in'      => $accessToken->getExpires(),
+                'expires_at'      => Carbon::createFromTimestamp($accessToken->getExpires())
             ]);
+
+            Session::forget('oauth2org');
 
             return redirect('/send-test-email');
 
@@ -104,11 +110,14 @@ class MicrosoftController extends Controller
      */
     public function sendTestEmail()
     {
-        $record = MicrosoftToken::first();
+        $organizationId = Session::get('oauth2org') ?? (auth()->check() ? auth()->user()->organization_id : null);
+        $record = $organizationId
+            ? MicrosoftToken::where('organization_id', $organizationId)->first()
+            : MicrosoftToken::first();
 
         // If expired, refresh
         if (!$record || now()->greaterThan($record->expires_at)) {
-            $newToken = $this->refreshAccessToken();
+            $newToken = $this->refreshAccessToken($organizationId);
             if (!$newToken) {
                 return redirect('/auth/redirect'); // if refresh fails
             }

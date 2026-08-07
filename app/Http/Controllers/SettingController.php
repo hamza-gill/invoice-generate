@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Setting\UpdateIntegrationRequest;
 use App\Http\Requests\Setting\UpdateInvoiceRequest;
+use App\Http\Requests\Setting\UpdateMailRequest;
 use App\Http\Requests\Setting\UpdateOrganizationRequest;
 use App\Http\Requests\Setting\UpdatePasswordRequest;
 use App\Models\Setting;
 use App\Models\WebhookSetting;
+use App\Services\MailConfigurationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,12 +23,18 @@ class SettingController extends Controller
     {
         $this->authorize('view', \App\Models\Setting::class);
         $setting = Setting::first();
-        $webhookUrl = secure_url('/webhook');
+
+        // Each account gets a unique webhook endpoint that identifies it.
+        $organization = auth()->user()->organization;
+        $webhookIdentifier = $organization->webhook_identifier ?? null;
+        $webhookUrl = $webhookIdentifier
+            ? secure_url('/webhook/' . $webhookIdentifier)
+            : secure_url('/webhook');
 
         // Get webhook settings (or create a new instance if none exists)
         $webhookSetting = WebhookSetting::first() ?? new WebhookSetting();
 
-        return view('settings.index', compact('setting', 'webhookSetting','webhookUrl'));
+        return view('settings.index', compact('setting', 'webhookSetting', 'webhookUrl', 'organization'));
     }
 
     public function updateOrganization(UpdateOrganizationRequest  $request)
@@ -63,6 +71,60 @@ class SettingController extends Controller
         $setting->fill($validated)->save();
 
         return back()->with('success', 'Integration settings updated successfully.');
+    }
+
+    public function updateMail(UpdateMailRequest $request)
+    {
+        $this->authorize('updateIntegration', \App\Models\Setting::class);
+        $validated = $request->validated();
+
+        $setting = Setting::firstOrNew();
+
+        // Keep the existing password when the field is left blank/masked
+        if (empty($validated['mail_password']) || str_starts_with((string) $validated['mail_password'], '***')) {
+            unset($validated['mail_password']);
+        }
+
+        if (($validated['mail_mailer'] ?? 'platform_default') === 'platform_default') {
+            $validated = array_merge($validated, [
+                'mail_host' => null,
+                'mail_port' => null,
+                'mail_username' => null,
+                'mail_encryption' => null,
+                'mail_from_address' => null,
+                'mail_from_name' => null,
+            ]);
+        }
+
+        $setting->fill($validated)->save();
+
+        return back()->with('success', 'Mail configuration updated successfully.');
+    }
+
+    public function sendTestMail(Request $request)
+    {
+        $this->authorize('updateIntegration', \App\Models\Setting::class);
+
+        $setting = Setting::firstOrNew();
+
+        if (! $setting->hasCustomMailConfig()) {
+            return back()->with('error', 'No custom mail provider configured yet. Save your mail settings first.');
+        }
+
+        $to = $request->input('test_email', Auth::user()->email);
+
+        try {
+            app(MailConfigurationService::class)->send(
+                $setting,
+                $to,
+                new \App\Mail\MailTestMail($setting)
+            );
+
+            return back()->with('success', "Test email sent to {$to}.");
+        } catch (\Throwable $e) {
+            \Log::error('Test mail send failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Failed to send test email: ' . $e->getMessage());
+        }
     }
 
     public function updateInvoice(UpdateInvoiceRequest $request)

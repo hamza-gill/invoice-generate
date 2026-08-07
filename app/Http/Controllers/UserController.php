@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Mail\UserInvitationMail;
 use App\Models\User;
+use App\Models\Invoice;
+use App\Models\Customer;
+use App\Models\Product;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,10 +18,19 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::paginate(10);
-        $roles = config('roles'); // get roles from config file
+        $user = auth()->user();
+        $roles = config('roles');
 
-        return view('users.index', compact('users', 'roles'));
+        $totalInvoices = Invoice::where('user_id', $user->id)->count();
+        $paidInvoices = Invoice::where('user_id', $user->id)->where('status', 'paid')->count();
+        $totalRevenue = Invoice::where('user_id', $user->id)->where('status', 'paid')->sum('amount');
+        $totalCustomers = Customer::where('organization_id', $user->organization_id)->count();
+        $totalProducts = Product::where('organization_id', $user->organization_id)->count();
+
+        return view('users.index', compact(
+            'user', 'roles',
+            'totalInvoices', 'paidInvoices', 'totalRevenue', 'totalCustomers', 'totalProducts'
+        ));
     }
 
 

@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceTemplate;
 use App\Models\Setting;
 use App\Services\InvoiceTemplateRenderer;
+use App\Services\MailConfigurationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -17,6 +18,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Jobs\SendInvoiceEmail;
+use App\Exports\InvoiceReportExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 use Stripe\StripeClient;
 
 class InvoiceController extends Controller
@@ -108,8 +112,6 @@ class InvoiceController extends Controller
                 'invoice_template_id' => $request->input('invoice_template_id') ?: null,
                 'custom_fields'       => $customFields,
             ]);
-
-            $invoice->consumeNextInvoiceNumber();
 
             // Create line items and calculate subtotal
             $subtotal = 0;
@@ -438,7 +440,15 @@ class InvoiceController extends Controller
         $invoice = Invoice::with(['customer', 'items'])->findOrFail($id);
         $this->authorize('send', $invoice);
         try {
-            Mail::to($invoice->customer->email)->send(new SendInvoiceMail($invoice));
+            $setting = Setting::withoutGlobalScopes()
+                ->where('organization_id', $invoice->organization_id)
+                ->first();
+
+            app(MailConfigurationService::class)->send(
+                $setting,
+                $invoice->customer->email,
+                new SendInvoiceMail($invoice)
+            );
             $invoice->logActivity(
                 'email_sent',
                 'Invoice email sent to ' . $invoice->customer->email . ' by ' . (auth()->user()->name ?? 'System') . '.'
@@ -528,16 +538,18 @@ class InvoiceController extends Controller
 
         $invoices = $query->paginate(10);
 
-        $totalInvoices = Invoice::count();
-        $paidInvoices = Invoice::where('status', 'paid')->count();
-        $unpaidInvoices = Invoice::where('status', 'unpaid')->count();
-        $outstanding = Invoice::where('status', 'unpaid')->sum('amount');
+        $baseQuery = Invoice::where('organization_id', auth()->user()->organization_id);
+
+        $totalInvoices = $baseQuery->count();
+        $paidInvoices = (clone $baseQuery)->where('status', 'paid')->count();
+        $unpaidInvoices = (clone $baseQuery)->where('status', 'unpaid')->count();
+        $outstanding = (clone $baseQuery)->where('status', 'unpaid')->sum('amount');
 
         // Chart data (monthly totals)
-        $chartLabels = Invoice::selectRaw('MONTHNAME(issue_date) as month')
+        $chartLabels = (clone $baseQuery)->selectRaw('MONTHNAME(issue_date) as month')
             ->groupBy('month')->pluck('month');
 
-        $chartData = Invoice::selectRaw('SUM(amount) as total')
+        $chartData = (clone $baseQuery)->selectRaw('SUM(amount) as total')
             ->groupByRaw('MONTH(issue_date)')
             ->pluck('total');
 
@@ -545,6 +557,23 @@ class InvoiceController extends Controller
             'invoices', 'totalInvoices', 'paidInvoices', 'unpaidInvoices', 'outstanding',
             'chartLabels', 'chartData'
         ));
+    }
+
+    public function exportCsv(Request $request)
+    {
+        $this->authorize('reports', Invoice::class);
+
+        $fileName = 'invoice-report-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(
+            new InvoiceReportExport(
+                $request->input('start_date'),
+                $request->input('end_date'),
+                $request->input('status'),
+                auth()->user()->organization_id
+            ),
+            $fileName
+        );
     }
 
 }

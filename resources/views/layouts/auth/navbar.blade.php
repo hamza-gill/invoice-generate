@@ -23,7 +23,14 @@
                     <i class="fas fa-bell text-gray-600 text-xl"></i>
 
                     @php
-                        $unreadCount = \Illuminate\Notifications\DatabaseNotification::whereNull('read_at')->count();
+                        $userInvoiceIds = \App\Models\Invoice::where('organization_id', Auth::user()->organization_id)->pluck('id');
+                    @endphp
+
+                    @php
+                        $unreadCount = \Illuminate\Notifications\DatabaseNotification::where('notifiable_type', \App\Models\Invoice::class)
+                            ->whereIn('notifiable_id', $userInvoiceIds)
+                            ->whereNull('read_at')
+                            ->count();
                     @endphp
 
                     @if($unreadCount > 0)
@@ -44,7 +51,11 @@
 
                     <div class="max-h-96 overflow-y-auto" id="notificationList">
                         @php
-                            $notifications = \Illuminate\Notifications\DatabaseNotification::latest()->take(5)->get();
+                            $notifications = \Illuminate\Notifications\DatabaseNotification::where('notifiable_type', \App\Models\Invoice::class)
+                                ->whereIn('notifiable_id', $userInvoiceIds)
+                                ->latest()
+                                ->take(5)
+                                ->get();
                         @endphp
 
                         @forelse($notifications as $notification)

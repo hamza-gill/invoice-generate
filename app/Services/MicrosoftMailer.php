@@ -22,10 +22,10 @@ class MicrosoftMailer
         ]);
     }
 
-    protected function refreshAccessToken()
+    protected function refreshAccessToken($organizationId = null)
     {
         $provider = $this->provider();
-        $record = MicrosoftToken::first();
+        $record = $this->tokenRecord($organizationId);
 
         if (!$record) {
             return null;
@@ -50,16 +50,25 @@ class MicrosoftMailer
         }
     }
 
-    public function getValidToken()
+    protected function tokenRecord($organizationId = null)
     {
-        $record = MicrosoftToken::first();
+        if ($organizationId) {
+            return MicrosoftToken::where('organization_id', $organizationId)->first();
+        }
+
+        return MicrosoftToken::first();
+    }
+
+    public function getValidToken($organizationId = null)
+    {
+        $record = $this->tokenRecord($organizationId);
 
         if (!$record) {
             return null;
         }
 
         if (now()->greaterThan($record->expires_at)) {
-            $newToken = $this->refreshAccessToken();
+            $newToken = $this->refreshAccessToken($organizationId);
             if ($newToken) {
                 return $newToken;
             }
@@ -69,16 +78,16 @@ class MicrosoftMailer
         return $record->access_token;
     }
 
-    public function getTransport()
+    public function getTransport($organizationId = null, $username = null)
     {
-        $token = $this->getValidToken();
+        $token = $this->getValidToken($organizationId);
 
         if (!$token) {
             throw new \Exception("No valid Microsoft OAuth2 token available. Please re-authenticate.");
         }
 
         $transport = new EsmtpTransport('smtp.office365.com', 587, false);
-        $transport->setUsername(env('MAIL_USERNAME'));
+        $transport->setUsername($username ?: env('MAIL_USERNAME'));
         $transport->setPassword($token);
 
         return $transport;

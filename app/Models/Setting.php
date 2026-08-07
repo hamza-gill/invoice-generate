@@ -40,6 +40,14 @@ class Setting extends Model
         'google_places_key',
         'default_template_id',
         'custom_invoice_css',
+        'mail_mailer',
+        'mail_host',
+        'mail_port',
+        'mail_username',
+        'mail_password',
+        'mail_encryption',
+        'mail_from_address',
+        'mail_from_name',
     ];
 
     protected $casts = [
@@ -80,6 +88,26 @@ class Setting extends Model
     public function setGooglePlacesKeyAttribute($value)
     {
         $this->attributes['google_places_key'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    // ✅ Automatically decrypt when accessed
+    public function getMailPasswordAttribute($value)
+    {
+        return $value ? Crypt::decryptString($value) : null;
+    }
+
+    // ✅ Automatically encrypt when saved
+    public function setMailPasswordAttribute($value)
+    {
+        $this->attributes['mail_password'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    /**
+     * Whether the organization has configured its own outbound mail.
+     */
+    public function hasCustomMailConfig()
+    {
+        return !empty($this->mail_mailer) && $this->mail_mailer !== 'platform_default';
     }
 
     /**

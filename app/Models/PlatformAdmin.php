@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class PlatformAdmin extends Model
+class PlatformAdmin extends Authenticatable
 {
     protected $fillable = [
         'name',

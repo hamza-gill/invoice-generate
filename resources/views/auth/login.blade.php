@@ -1,6 +1,6 @@
 @extends('layouts.guest.auth')
 
-@section('title', 'Login - ' . ($globalSettings->company_name ?? 'ReconX'))
+@section('title', 'Login - ' . ($globalSettings->company_name ?? 'Inveqi'))
 @section('auth-heading', 'Welcome back')
 @section('auth-subheading', 'Sign in to manage invoices, estimates, recurring billing, and get paid faster with Stripe.')
 
@@ -16,7 +16,7 @@
                 <i class="fas fa-bolt"></i>
             </div>
             <h2 class="text-2xl font-bold text-gray-900">Sign in</h2>
-            <p class="mt-1 text-sm text-gray-500">Access your {{ $globalSettings->company_name ?? 'ReconX' }} account</p>
+            <p class="mt-1 text-sm text-gray-500">Access your {{ $globalSettings->company_name ?? 'Inveqi' }} account</p>
         </div>
 
         <div class="hidden lg:block mb-6">
@@ -81,7 +81,7 @@
         </p>
 
         <p class="mt-6 text-center text-xs text-gray-400">
-            &copy; {{ date('Y') }} {{ $globalSettings->company_name ?? 'ReconX' }}. All rights reserved.
+            &copy; {{ date('Y') }} {{ $globalSettings->company_name ?? 'Inveqi' }}. All rights reserved.
         </p>
     </div>
 @endsection

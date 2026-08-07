@@ -11,7 +11,7 @@ class PlatformAdminSeeder extends Seeder
     public function run(): void
     {
         PlatformAdmin::updateOrCreate(
-            ['email' => 'admin@reconx.com'],
+            ['email' => 'admin@inveqi.com'],
             [
                 'name' => 'Platform Admin',
                 'password' => Hash::make('Admin@123'),

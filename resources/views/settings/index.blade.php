@@ -48,6 +48,11 @@
                             <i class="fas fa-plug mr-3"></i> Integrations
                         </button>
 
+                        <button id="tab-mail"
+                                class="tab-btn flex items-center px-6 py-3 text-left text-gray-600 hover:bg-gray-100 hover:text-blue-600 border-l-4 border-transparent">
+                            <i class="fas fa-envelope mr-3"></i> Mail Configuration
+                        </button>
+
                         <button id="tab-invoice"
                                 class="tab-btn flex items-center px-6 py-3 text-left text-gray-600 hover:bg-gray-100 hover:text-blue-600 border-l-4 border-transparent">
                             <i class="fas fa-file-invoice-dollar mr-3"></i> Invoice Configuration
@@ -321,7 +326,7 @@
                                             Copy
                                         </button>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <p class="text-xs text-gray-500 mt-1">This endpoint is unique to your account and identifies it on incoming webhooks.</p>
                                 </div>
 
                                 <!-- Webhook Secret -->
@@ -393,6 +398,220 @@
                                 </button>
                             @endcan
                         </form>
+                    </div>
+
+                    {{-- ✉️ Mail Configuration --}}
+                    <div id="tab-content-mail" class="hidden">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Mail Configuration</h2>
+
+                        @cannot('updateIntegration', $setting)
+                            <div class="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+                                <i class="fas fa-info-circle mr-2"></i> You have read-only access to these settings.
+                            </div>
+                        @endcannot
+
+                        <div class="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Configure how <strong>invoice emails</strong> are sent from your account. Choose your own
+                            mail provider (Brevo, SendGrid, Microsoft 365, or a custom SMTP server) or leave it on
+                            "Platform Default" to use the platform's built-in mailer.
+                        </div>
+
+                        <form method="POST" action="{{ route('settings.mail.update') }}" class="space-y-6">
+                            @csrf
+
+                            @php
+                                $presets = \App\Services\MailConfigurationService::providerPresets();
+                                $mailPassword = $setting->mail_password ?? '';
+                                $maskedMailPassword = $mailPassword
+                                    ? str_repeat('*', max(0, strlen($mailPassword) - 4)) . substr($mailPassword, -4)
+                                    : '';
+                                $mailFromAddress = $setting->mail_from_address ?? '';
+                                $mailFromName = $setting->mail_from_name ?? '';
+                                $isMicrosoftConnected = $setting->organization_id
+                                    ? \App\Models\MicrosoftToken::where('organization_id', $setting->organization_id)->exists()
+                                    : \App\Models\MicrosoftToken::exists();
+                            @endphp
+
+                            <div>
+                                <label class="block text-gray-600 font-medium mb-2">Mail Provider</label>
+                                <select name="mail_mailer" id="mail_provider_select"
+                                        class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                                    {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    <option value="platform_default" {{ old('mail_mailer', $setting->mail_mailer ?? 'platform_default') === 'platform_default' ? 'selected' : '' }}>
+                                        Platform Default
+                                    </option>
+                                    <option value="brevo" {{ old('mail_mailer', $setting->mail_mailer) === 'brevo' ? 'selected' : '' }}>
+                                        Brevo
+                                    </option>
+                                    <option value="sendgrid" {{ old('mail_mailer', $setting->mail_mailer) === 'sendgrid' ? 'selected' : '' }}>
+                                        SendGrid
+                                    </option>
+                                    <option value="microsoft" {{ old('mail_mailer', $setting->mail_mailer) === 'microsoft' ? 'selected' : '' }}>
+                                        Microsoft 365 (OAuth2)
+                                    </option>
+                                    <option value="smtp" {{ old('mail_mailer', $setting->mail_mailer) === 'smtp' ? 'selected' : '' }}>
+                                        Custom SMTP
+                                    </option>
+                                    <option value="log" {{ old('mail_mailer', $setting->mail_mailer) === 'log' ? 'selected' : '' }}>
+                                        Log (for testing)
+                                    </option>
+                                </select>
+                            </div>
+
+                            {{-- SMTP-based fields: brevo / sendgrid / smtp --}}
+                            <div id="smtp-fields" class="space-y-6 hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-600 font-medium mb-2">SMTP Host</label>
+                                        <input type="text" name="mail_host" id="mail_host_input"
+                                               value="{{ old('mail_host', $setting->mail_host ?? '') }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="smtp.example.com"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-gray-600 font-medium mb-2">Port</label>
+                                        <input type="number" name="mail_port" id="mail_port_input"
+                                               value="{{ old('mail_port', $setting->mail_port ?? '') }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="587"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-600 font-medium mb-2">Username</label>
+                                        <input type="text" name="mail_username" id="mail_username_input"
+                                               value="{{ old('mail_username', $setting->mail_username ?? '') }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="SMTP username"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                        <p id="mail_username_hint" class="text-xs text-gray-500 mt-1"></p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-gray-600 font-medium mb-2">Password / API Key</label>
+                                        <div class="flex items-center space-x-3">
+                                            <input type="hidden" name="mail_password" id="mail_password_actual"
+                                                   value="{{ old('mail_password', $mailPassword) }}">
+                                            <input type="password" id="mail_password_display"
+                                                   value="{{ $maskedMailPassword }}"
+                                                   class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="••••••••"
+                                                   data-actual-field="mail_password_actual"
+                                                {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                            @if($isAdminOrDeveloper)
+                                                <button type="button"
+                                                        class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
+                                                        data-display-field="mail_password_display"
+                                                        data-actual-field="mail_password_actual"
+                                                        data-full-key="{{ $mailPassword }}"
+                                                        data-masked-key="{{ $maskedMailPassword }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-600 font-medium mb-2">Encryption</label>
+                                    <select name="mail_encryption" class="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                        <option value="tls" {{ old('mail_encryption', $setting->mail_encryption ?? 'tls') === 'tls' ? 'selected' : '' }}>TLS</option>
+                                        <option value="ssl" {{ old('mail_encryption', $setting->mail_encryption) === 'ssl' ? 'selected' : '' }}>SSL</option>
+                                        <option value="none" {{ old('mail_encryption', $setting->mail_encryption) === 'none' ? 'selected' : '' }}>None</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- Microsoft section --}}
+                            <div id="microsoft-fields" class="hidden">
+                                <div class="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <label class="block text-gray-600 font-medium mb-2">Microsoft 365 Sender</label>
+                                    <input type="text" name="mail_username"
+                                           value="{{ old('mail_username', $setting->mail_username ?? '') }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="you@yourcompany.com"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        The mailbox address used to authenticate with Microsoft (OAuth2). Connect the account below.
+                                    </p>
+                                </div>
+
+                                <div class="mb-4 flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <div>
+                                        <p class="text-gray-700 font-medium">
+                                            <i class="fas fa-microsoft mr-1 text-blue-600"></i> Microsoft OAuth2 Connection
+                                        </p>
+                                        <p class="text-sm text-gray-500 mt-1">
+                                            @if($isMicrosoftConnected)
+                                                <span class="text-green-600 font-medium">Connected</span> — your Microsoft 365 token is stored for this account.
+                                            @else
+                                                <span class="text-red-500 font-medium">Not connected</span> — connect to enable sending via Microsoft 365.
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <a href="{{ route('auth.redirect') }}"
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shrink-0">
+                                        <i class="fas fa-link mr-1"></i> Connect Microsoft 365
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-gray-600 font-medium mb-2">From Address</label>
+                                    <input type="email" name="mail_from_address"
+                                           value="{{ old('mail_from_address', $mailFromAddress) }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="invoices@yourcompany.com"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-600 font-medium mb-2">From Name</label>
+                                    <input type="text" name="mail_from_name"
+                                           value="{{ old('mail_from_name', $mailFromName) }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Your Company"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
+                                </div>
+                            </div>
+
+                            @can('updateIntegration', $setting)
+                                <button type="submit"
+                                        class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition-all">
+                                    Save Mail Configuration
+                                </button>
+                            @endcan
+                        </form>
+
+                        @can('updateIntegration', $setting)
+                            <form method="POST" action="{{ route('settings.mail.test') }}" class="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                                @csrf
+                                <h3 class="text-xl font-semibold text-gray-800 mb-4">Send Test Email</h3>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    Verify your configuration by sending a test message to an address you control.
+                                </p>
+                                <div class="flex items-end gap-4">
+                                    <div class="flex-1">
+                                        <label class="block text-gray-600 font-medium mb-2">Recipient</label>
+                                        <input type="email" name="test_email"
+                                               value="{{ old('test_email', auth()->user()->email ?? '') }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="you@example.com">
+                                    </div>
+                                    <button type="submit"
+                                            class="bg-green-600 text-white px-6 py-2.5 rounded-lg shadow hover:bg-green-700 transition-all">
+                                        <i class="fas fa-paper-plane mr-2"></i>Send Test Email
+                                    </button>
+                                </div>
+                            </form>
+                        @endcan
                     </div>
 
                     {{-- 🧾 Invoice Configuration --}}
@@ -650,6 +869,35 @@
                     @can('view', App\Models\WebhookSetting::class)
                         <div id="tab-content-webhooks" class="hidden">
                             <h2 class="text-2xl font-semibold text-gray-800 mb-6">Webhook Settings</h2>
+
+                            @php
+                                $accountWebhookUrl = !empty($organization->webhook_identifier)
+                                    ? secure_url('/webhook/' . $organization->webhook_identifier)
+                                    : secure_url('/webhook');
+                                $accountWebhookIdentifier = $organization->webhook_identifier ?? '';
+                            @endphp
+
+                            <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <label class="block text-gray-700 font-medium mb-2">
+                                    <i class="fas fa-fingerprint mr-1 text-blue-600"></i> Your Unique Webhook Endpoint
+                                </label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="text"
+                                           value="{{ $accountWebhookUrl }}"
+                                           readonly
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 bg-white focus:ring-2 focus:ring-blue-500 font-mono text-sm">
+                                    <button type="button"
+                                            onclick="copyWebhook('{{ $accountWebhookUrl }}')"
+                                            class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition shrink-0">
+                                        Copy
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    This endpoint is unique to your account. Send events to
+                                    <span class="font-mono">/webhook/{{ $accountWebhookIdentifier }}</span>
+                                    and we will identify and handle them for your account, just like the default webhook.
+                                </p>
+                            </div>
 
                             @cannot('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting)
                                 <div class="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
@@ -946,11 +1194,13 @@
         const tabs = {
             org: document.getElementById('tab-org'),
             int: document.getElementById('tab-int'),
+            mail: document.getElementById('tab-mail'),
             invoice: document.getElementById('tab-invoice'),
             sec: document.getElementById('tab-security'),
             webhook: document.getElementById('tab-webhook'),
             contentOrg: document.getElementById('tab-content-org'),
             contentInt: document.getElementById('tab-content-int'),
+            contentMail: document.getElementById('tab-content-mail'),
             contentInvoice: document.getElementById('tab-content-invoice'),
             contentWebhook: document.getElementById('tab-content-webhooks'),
             contentSecurity: document.getElementById('tab-content-security'),
@@ -969,9 +1219,47 @@
 
         tabs.org?.addEventListener('click', () => switchTab(tabs.org, tabs.contentOrg));
         tabs.int?.addEventListener('click', () => switchTab(tabs.int, tabs.contentInt));
+        tabs.mail?.addEventListener('click', () => switchTab(tabs.mail, tabs.contentMail));
         tabs.invoice?.addEventListener('click', () => switchTab(tabs.invoice, tabs.contentInvoice));
         tabs.webhook?.addEventListener('click', () => switchTab(tabs.webhook, tabs.contentWebhook));
         tabs.sec?.addEventListener('click', () => switchTab(tabs.sec, tabs.contentSecurity));
+
+        // Mail provider field toggling + presets
+        const mailPresets = @json(\App\Services\MailConfigurationService::providerPresets());
+        const mailProviderSelect = document.getElementById('mail_provider_select');
+
+        function applyMailProviderFields() {
+            const provider = mailProviderSelect?.value || 'platform_default';
+            const smtpFields = document.getElementById('smtp-fields');
+            const msFields = document.getElementById('microsoft-fields');
+
+            const isSmtp = ['brevo', 'sendgrid', 'smtp'].includes(provider);
+            const isMs = provider === 'microsoft';
+
+            smtpFields?.classList.toggle('hidden', !isSmtp);
+            msFields?.classList.toggle('hidden', !isMs);
+
+            // Prefill preset defaults for hosts/ports (only when a preset exists)
+            if (mailPresets && mailPresets[provider]) {
+                const preset = mailPresets[provider];
+                const hostInput = document.getElementById('mail_host_input');
+                const portInput = document.getElementById('mail_port_input');
+                const usernameHint = document.getElementById('mail_username_hint');
+
+                if (hostInput && !hostInput.value) {
+                    hostInput.value = preset.host || '';
+                }
+                if (portInput && !portInput.value) {
+                    portInput.value = preset.port || '';
+                }
+                if (usernameHint) {
+                    usernameHint.textContent = preset.username_hint || '';
+                }
+            }
+        }
+
+        mailProviderSelect?.addEventListener('change', applyMailProviderFields);
+        applyMailProviderFields();
 
         // Rush Delivery Toggle
         document.getElementById('enable_rush_delivery_toggle')?.addEventListener('change', function() {

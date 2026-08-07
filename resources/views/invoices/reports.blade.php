@@ -34,12 +34,12 @@
             <form method="GET" action="{{ route('reports') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-1">Start Date</label>
-                    <input type="date" name="start_date" value="{{ request('start_date') }}"
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" max="{{ now()->format('Y-m-d') }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
                 <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-1">End Date</label>
-                    <input type="date" name="end_date" value="{{ request('end_date') }}"
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" max="{{ now()->format('Y-m-d') }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
                 <div>
@@ -69,9 +69,10 @@
         <div class="bg-white p-6 rounded-xl shadow border border-gray-100 overflow-x-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Detailed Report</h3>
-                <a href="{{ route('reports') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <button type="button" onclick="document.getElementById('exportModal').classList.remove('hidden')"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                     <i class="fas fa-file-excel mr-2"></i>Export CSV
-                </a>
+                </button>
             </div>
 
             <table class="min-w-full text-sm text-gray-700">
@@ -89,7 +90,7 @@
                 @forelse($invoices as $invoice)
                     <tr class="border-b hover:bg-gray-50">
                         <td class="py-3 px-4">{{ $invoice->invoice_number }}</td>
-                        <td class="py-3 px-4">{{ $invoice->customer->name ?? '—' }}</td>
+                        <td class="py-3 px-4">{{ trim(($invoice->customer->first_name ?? '') . ' ' . ($invoice->customer->last_name ?? '')) ?: '—' }}</td>
                         <td class="py-3 px-4">{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M d, Y') }}</td>
                         <td class="py-3 px-4">{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</td>
                         <td class="py-3 px-4">
@@ -101,7 +102,7 @@
                                 <span class="bg-yellow-100 text-yellow-700 px-2 py-1 text-xs rounded">Unpaid</span>
                             @endif
                         </td>
-                        <td class="py-3 px-4 font-semibold">${{ number_format($invoice->total_amount, 2) }}</td>
+                        <td class="py-3 px-4 font-semibold">${{ number_format($invoice->amount ?? 0, 2) }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -139,6 +140,115 @@
                     y: { beginAtZero: true }
                 }
             }
+        });
+    </script>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Export Report</h3>
+                <button onclick="document.getElementById('exportModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="exportForm" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-1">Start Date</label>
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" max="{{ now()->format('Y-m-d') }}"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-1">End Date</label>
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" max="{{ now()->format('Y-m-d') }}"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-1">Status</label>
+                    <select name="status" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="">All</option>
+                        <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
+                        <option value="unpaid" {{ request('status') == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
+                        <option value="overdue" {{ request('status') == 'overdue' ? 'selected' : '' }}>Overdue</option>
+                    </select>
+                </div>
+
+                <div id="exportError" class="hidden text-red-600 text-sm"></div>
+                <div id="exportProgress" class="hidden text-blue-600 text-sm">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Generating export file...
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="document.getElementById('exportModal').classList.add('hidden')"
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" id="exportBtn"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <i class="fas fa-download mr-2"></i>Download
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('exportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const btn = document.getElementById('exportBtn');
+            const progress = document.getElementById('exportProgress');
+            const error = document.getElementById('exportError');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+            progress.classList.remove('hidden');
+            error.classList.add('hidden');
+
+            const formData = new FormData(form);
+
+            fetch('{{ route("reports.export") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                },
+                body: formData
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.text().then(function(text) {
+                        try { var data = JSON.parse(text); throw new Error(data.message || 'Export failed'); }
+                        catch(e) { throw new Error('Export failed. Please try again.'); }
+                    });
+                }
+                return response.blob();
+            })
+            .then(function(blob) {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'invoice-report-' + new Date().toISOString().slice(0, 10) + '.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                progress.classList.add('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-download mr-2"></i>Download';
+                document.getElementById('exportModal').classList.add('hidden');
+            })
+            .catch(function(err) {
+                progress.classList.add('hidden');
+                error.textContent = err.message || 'Export failed. Please try again.';
+                error.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-download mr-2"></i>Download';
+            });
         });
     </script>
 @endsection

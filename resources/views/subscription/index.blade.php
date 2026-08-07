@@ -40,10 +40,10 @@
             @if($currentSubscription?->subscription_plan_id === $plan->id)
                 <button disabled class="w-full py-2 bg-gray-100 text-gray-500 rounded-lg font-medium">Current Plan</button>
             @elseif($plan->price > 0)
-                <form action="{{ route('subscription.checkout', $plan) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium">Upgrade</button>
-                </form>
+                <a href="{{ route('subscription.checkout', $plan) }}"
+                   class="block w-full text-center py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium">
+                    Upgrade
+                </a>
             @else
                 <span class="block text-center py-2 text-gray-500 text-sm">Free tier active</span>
             @endif

@@ -1,29 +1,12 @@
 @extends('layouts.marketing')
 
-@section('title', 'Pricing - ReconX')
+@section('title', 'Pricing - Inveqi')
+@section('meta_description', 'Simple, transparent pricing for invoicing software. Free Starter plan plus Professional and Business plans with Stripe payments, recurring billing and more. Start your 14-day free trial.')
+@section('meta_keywords', 'invoice software pricing, invoicing plans, free invoice software, subscription billing, invoice management cost, recurring invoice pricing')
 
 @section('content')
 {{-- Nav --}}
-<header class="sticky top-0 z-50 border-b border-gray-200/60 bg-white/80 backdrop-blur-lg">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <a href="{{ route('landing') }}" class="flex items-center gap-2">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary text-white shadow-soft">
-                <i class="fas fa-bolt text-sm"></i>
-            </div>
-            <span class="text-lg font-bold tracking-tight">ReconX</span>
-        </a>
-        <nav class="hidden items-center gap-8 md:flex">
-            <a href="{{ route('landing') }}#features" class="text-sm text-gray-500 transition hover:text-gray-900">Features</a>
-            <a href="{{ route('landing') }}#advanced" class="text-sm text-gray-500 transition hover:text-gray-900">Invoicing</a>
-            <a href="{{ route('landing') }}#dashboard" class="text-sm text-gray-500 transition hover:text-gray-900">Product</a>
-            <a href="{{ route('pricing') }}" class="text-sm text-gray-900 font-medium">Pricing</a>
-            <a href="{{ route('login') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Login</a>
-        </nav>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('register') }}" class="hidden gradient-primary text-white text-sm font-medium px-4 py-2 rounded-lg shadow-soft hover:opacity-90 md:inline-flex">Get Started</a>
-        </div>
-    </div>
-</header>
+@include('landing.partials.nav', ['active' => 'pricing'])
 
 <section class="py-24">
     <div class="max-w-7xl mx-auto px-6 text-center">
@@ -67,11 +50,5 @@
 </section>
 
 {{-- Footer --}}
-<footer class="border-t border-gray-200/60 py-12">
-    <div class="mx-auto max-w-7xl px-6">
-        <div class="mt-0 text-center text-sm text-gray-500">
-            &copy; {{ date('Y') }} ReconX. All rights reserved.
-        </div>
-    </div>
-</footer>
+@include('landing.partials.footer')
 @endsection

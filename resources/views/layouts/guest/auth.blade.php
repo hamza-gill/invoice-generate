@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'ReconX')</title>
+    <title>@yield('title', 'Inveqi')</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -62,7 +65,7 @@
                 <div class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg gradient-primary text-white shadow-sm">
                     <i class="fas fa-bolt text-xs sm:text-sm"></i>
                 </div>
-                <span class="text-base sm:text-lg font-bold tracking-tight">ReconX</span>
+                <span class="text-base sm:text-lg font-bold tracking-tight">Inveqi</span>
             </a>
             <div class="flex items-center gap-2 sm:gap-3 text-sm">
                 @hasSection('auth-alt-link')

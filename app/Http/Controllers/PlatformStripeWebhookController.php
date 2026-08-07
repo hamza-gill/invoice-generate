@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlatformSetting;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,10 +17,10 @@ class PlatformStripeWebhookController extends Controller
 
     public function handle(Request $request)
     {
-        Stripe::setApiKey(config('subscription.stripe_secret'));
+        Stripe::setApiKey(PlatformSetting::getStripeSecretKey());
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
-        $secret = config('subscription.stripe_webhook_secret');
+        $secret = PlatformSetting::getStripeWebhookSecret();
 
         try {
             $event = Webhook::constructEvent($payload, $sigHeader, $secret);
@@ -45,6 +46,17 @@ class PlatformStripeWebhookController extends Controller
                 $subscription = $event->data->object;
                 \App\Models\Subscription::where('stripe_subscription_id', $subscription->id)
                     ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+                break;
+
+            case 'customer.subscription.updated':
+            case 'customer.subscription.created':
+                $subscription = $event->data->object;
+                \App\Models\Subscription::where('stripe_subscription_id', $subscription->id)
+                    ->update([
+                        'status' => $subscription->status === 'canceled' ? 'cancelled' : ($subscription->status ?: 'active'),
+                        'current_period_start' => isset($subscription->current_period_start) ? \Illuminate\Support\Carbon::createFromTimestamp($subscription->current_period_start) : null,
+                        'current_period_end' => isset($subscription->current_period_end) ? \Illuminate\Support\Carbon::createFromTimestamp($subscription->current_period_end) : null,
+                    ]);
                 break;
         }
 

@@ -33,22 +33,25 @@ class SearchController extends Controller
             |--------------------------------------------------------------------------
             */
             $customers = Customer::where(function ($q) use ($likePattern) {
-                $q->where('name', 'LIKE', $likePattern)
-                    ->orWhere('email', 'LIKE', $likePattern);
+                $q->where('first_name', 'LIKE', $likePattern)
+                    ->orWhere('last_name', 'LIKE', $likePattern)
+                    ->orWhere('email', 'LIKE', $likePattern)
+                    ->orWhere('company_name', 'LIKE', $likePattern);
             })
                 ->take(10)
                 ->get()
                 ->filter(function ($c) use ($query) {
-                    return FuzzySearch::isSimilar($c->name, $query)
-                        || FuzzySearch::isSimilar($c->email, $query)
-                        || stripos($c->name, $query) !== false
-                        || stripos($c->email, $query) !== false;
+                    $fullName = trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? ''));
+                    return ($fullName && (FuzzySearch::isSimilar($fullName, $query) || stripos($fullName, $query) !== false))
+                        || ($c->email && (FuzzySearch::isSimilar($c->email, $query) || stripos($c->email, $query) !== false))
+                        || ($c->company_name && stripos($c->company_name, $query) !== false);
                 })
                 ->values()
                 ->map(function ($c) {
+                    $fullName = trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? ''));
                     return [
                         'type'  => 'customer',
-                        'label' => "{$c->name} ({$c->email})",
+                        'label' => "{$fullName} (" . ($c->email ?? 'No email') . ")",
                         'url'   => route('customers.show', $c->id)
                     ];
                 });
@@ -62,6 +65,7 @@ class SearchController extends Controller
             |--------------------------------------------------------------------------
             */
             $invoices = Invoice::with('customer')
+                ->where('user_id', auth()->id())
                 ->where(function ($q) use ($likePattern, $query) {
                     $q->where('invoice_number', 'LIKE', $likePattern)
                         ->orWhere('description', 'LIKE', $likePattern)
@@ -70,25 +74,32 @@ class SearchController extends Controller
 
                     // Search by customer name or email if invoice has customer relationship
                     $q->orWhereHas('customer', function ($customerQuery) use ($likePattern) {
-                        $customerQuery->where('name', 'LIKE', $likePattern)
+                        $customerQuery->where('first_name', 'LIKE', $likePattern)
+                            ->orWhere('last_name', 'LIKE', $likePattern)
                             ->orWhere('email', 'LIKE', $likePattern);
                     });
                 })
                 ->take(10)
                 ->get()
                 ->filter(function ($i) use ($query) {
-                    // Filter using fuzzy search and stripos with null checks
-                    $matchesInvoice =
-                        ($i->invoice_number && (FuzzySearch::isSimilar($i->invoice_number, $query) || stripos($i->invoice_number, $query) !== false))
-                        || ($i->description && (FuzzySearch::isSimilar($i->description, $query) || stripos($i->description, $query) !== false))
-                        || ($i->project_address && (FuzzySearch::isSimilar($i->project_address, $query) || stripos($i->project_address, $query) !== false))
-                        || ($i->amount && stripos((string)$i->amount, $query) !== false);
+                    $invoiceNum = $i->invoice_number ?? '';
+                    $desc = $i->description ?? '';
+                    $address = $i->project_address ?? '';
+                    $amount = (string) ($i->amount ?? '');
 
-                    // Check customer fields with null checks
+                    $matchesInvoice =
+                        ($invoiceNum && (FuzzySearch::isSimilar($invoiceNum, $query) || stripos($invoiceNum, $query) !== false))
+                        || ($desc && (FuzzySearch::isSimilar($desc, $query) || stripos($desc, $query) !== false))
+                        || ($address && (FuzzySearch::isSimilar($address, $query) || stripos($address, $query) !== false))
+                        || ($amount && stripos($amount, $query) !== false);
+
                     $matchesCustomer = false;
                     if ($i->customer) {
+                        $custName = $i->customer->first_name
+                            ? trim(($i->customer->first_name ?? '') . ' ' . ($i->customer->last_name ?? ''))
+                            : ($i->customer->name ?? '');
                         $matchesCustomer =
-                            ($i->customer->name && (FuzzySearch::isSimilar($i->customer->name, $query) || stripos($i->customer->name, $query) !== false))
+                            ($custName && (FuzzySearch::isSimilar($custName, $query) || stripos($custName, $query) !== false))
                             || ($i->customer->email && (FuzzySearch::isSimilar($i->customer->email, $query) || stripos($i->customer->email, $query) !== false));
                     }
 
@@ -97,7 +108,9 @@ class SearchController extends Controller
                 ->values()
                 ->map(function ($i) {
 
-                    $customerName = $i->customer?->name ?? 'Unknown Customer';
+                    $customerName = $i->customer
+                        ? trim(($i->customer->first_name ?? '') . ' ' . ($i->customer->last_name ?? '')) ?: 'Unknown Customer'
+                        : 'Unknown Customer';
 
                     return [
                         'type'  => 'invoice',
@@ -119,16 +132,15 @@ class SearchController extends Controller
                 ->take(10)
                 ->get()
                 ->filter(function ($p) use ($query) {
-                    return FuzzySearch::isSimilar($p->name, $query)
-                        || FuzzySearch::isSimilar($p->category, $query)
-                        || stripos($p->name, $query) !== false
-                        || stripos($p->category, $query) !== false;
+                    $cat = $p->category ?? '';
+                    return ($p->name && (FuzzySearch::isSimilar($p->name, $query) || stripos($p->name, $query) !== false))
+                        || ($cat && (FuzzySearch::isSimilar($cat, $query) || stripos($cat, $query) !== false));
                 })
                 ->values()
                 ->map(function ($p) {
                     return [
                         'type'  => 'product',
-                        'label' => "{$p->name} — {$p->category} — {$p->price} USD",
+                        'label' => "{$p->name} — " . ($p->category ?? 'Uncategorized') . " — {$p->price} USD",
                         'url'   => route('products.show', $p->id)
                     ];
                 });
@@ -158,7 +170,8 @@ class SearchController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Search failed. Please try again later.'
+                'message' => 'Search failed. Please try again later.',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

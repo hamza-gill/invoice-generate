@@ -1,6 +1,6 @@
 @extends('layouts.guest.auth')
 
-@section('title', 'Register - ReconX')
+@section('title', 'Register - Inveqi')
 @section('auth-heading', 'Start your free trial')
 @section('auth-subheading', 'Create your workspace in minutes. Invoices, estimates, templates, and Stripe payments — no credit card required.')
 
@@ -77,11 +77,11 @@
             <div class="space-y-2.5 rounded-xl border border-gray-100 bg-gray-50/80 p-4 text-sm text-gray-600">
                 <label class="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" name="terms" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600" required>
-                    <span>I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a></span>
+                    <span>I agree to the <a href="{{ route('terms') }}" class="text-blue-600 hover:underline">Terms of Service</a></span>
                 </label>
                 <label class="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" name="privacy" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600" required>
-                    <span>I agree to the <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a></span>
+                    <span>I agree to the <a href="{{ route('privacy') }}" class="text-blue-600 hover:underline">Privacy Policy</a></span>
                 </label>
                 <label class="flex items-start gap-2.5 cursor-pointer">
                     <input type="checkbox" name="sharing" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600" required>

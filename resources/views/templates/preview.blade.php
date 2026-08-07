@@ -226,7 +226,7 @@
 
                     {{-- Footer --}}
                     <div class="mt-8 pt-4 border-t border-gray-100 text-center">
-                        <p class="text-xs text-gray-400">Generated with <span class="font-semibold" style="color: {{ $primary }};">{{ $template->name }}</span> template &middot; Powered by ReconX</p>
+                        <p class="text-xs text-gray-400">Generated with <span class="font-semibold" style="color: {{ $primary }};">{{ $template->name }}</span> template &middot; Powered by Inveqi</p>
                     </div>
                 </div>
             </div>

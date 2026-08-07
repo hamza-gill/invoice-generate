@@ -3,8 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\Invoice;
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Mail;
+use App\Services\MailConfigurationService;
 use App\Mail\InvoiceMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable; // ✅ Add this
@@ -28,7 +29,13 @@ class SendInvoiceEmail implements ShouldQueue
 
     public function handle()
     {
-        Mail::to($this->invoice->customer->email)->send(
+        $setting = Setting::withoutGlobalScopes()
+            ->where('organization_id', $this->invoice->organization_id)
+            ->first();
+
+        app(MailConfigurationService::class)->send(
+            $setting,
+            $this->invoice->customer->email,
             new InvoiceMail($this->invoice, $this->pdfPath, $this->checkoutUrl)
         );
     }

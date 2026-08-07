@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Organization;
+use App\Models\PlatformSetting;
 use App\Models\Setting;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -28,7 +29,7 @@ class SubscriptionService
 
     public function createCheckoutSession(Organization $organization, SubscriptionPlan $plan, string $successUrl, string $cancelUrl): Session
     {
-        Stripe::setApiKey(config('subscription.stripe_secret'));
+        Stripe::setApiKey(PlatformSetting::getStripeSecretKey());
 
         $sessionData = [
             'mode' => 'subscription',
@@ -74,16 +75,23 @@ class SubscriptionService
 
         Subscription::where('organization_id', $organization->id)
             ->whereIn('status', ['trialing', 'active'])
+            ->where(function ($q) use ($stripeSubscriptionId) {
+                $q->whereNull('stripe_subscription_id')
+                    ->orWhere('stripe_subscription_id', '!=', $stripeSubscriptionId);
+            })
             ->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
-        Subscription::create([
-            'organization_id' => $organization->id,
-            'subscription_plan_id' => $plan->id,
-            'stripe_subscription_id' => $stripeSubscriptionId,
-            'status' => 'active',
-            'current_period_start' => now(),
-            'current_period_end' => now()->addMonth(),
-        ]);
+        Subscription::updateOrCreate(
+            ['stripe_subscription_id' => $stripeSubscriptionId],
+            [
+                'organization_id' => $organization->id,
+                'subscription_plan_id' => $plan->id,
+                'status' => 'active',
+                'current_period_start' => now(),
+                'current_period_end' => now()->addMonth(),
+                'cancelled_at' => null,
+            ]
+        );
 
         Setting::withoutGlobalScopes()
             ->where('organization_id', $organization->id)

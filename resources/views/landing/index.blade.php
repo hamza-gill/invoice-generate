@@ -1,6 +1,26 @@
 @extends('layouts.marketing')
 
-@section('title', 'ReconX — Invoicing, Recurring Billing & Estimates Software')
+@section('title', 'Inveqi — Invoicing, Recurring Billing & Estimates Software')
+@section('meta_description', 'Create professional invoices online for free with Inveqi. Drag-and-drop invoice builder, recurring billing, estimates & quotes, 10+ templates, and Stripe payments. Start your 14-day free trial.')
+@section('meta_keywords', 'invoice software, free invoice generator, online invoicing, create invoice online, invoice maker, invoice templates, recurring invoices, estimates and quotes, billing software, invoice management, invoice builder, small business invoicing, Stripe invoicing, PDF invoices, payment reminders, invoice app, invoicing for freelancers')
+@section('og_title', 'Inveqi — Free Invoicing Software')
+@section('og_description', 'Create, send and track professional invoices, estimates and recurring billing online. Get paid faster with Stripe. Start your free 14-day trial.')
+
+@push('jsonld')
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "SoftwareApplication",
+    "name": "Inveqi",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "{{ url('/') }}",
+    "description": "Free invoice management software with recurring billing, estimates and quotes, professional templates, and Stripe payments.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free Starter plan. Paid plans available." },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "128" }
+}
+</script>
+@endpush
 
 @section('content')
 {{-- Nav --}}
@@ -10,7 +30,7 @@
             <div class="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary text-white shadow-soft">
                 <i class="fas fa-bolt text-sm"></i>
             </div>
-            <span class="text-lg font-bold tracking-tight">ReconX</span>
+            <span class="text-lg font-bold tracking-tight">Inveqi</span>
         </a>
         <nav class="hidden items-center gap-8 md:flex">
             <a href="#features" class="text-sm text-gray-500 transition hover:text-gray-900">Features</a>
@@ -18,6 +38,7 @@
             <a href="#dashboard" class="text-sm text-gray-500 transition hover:text-gray-900">Product</a>
             <a href="#pricing" class="text-sm text-gray-500 transition hover:text-gray-900">Pricing</a>
             <a href="#faq" class="text-sm text-gray-500 transition hover:text-gray-900">FAQ</a>
+            <a href="{{ route('contact') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Contact</a>
             <a href="{{ route('login') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Login</a>
         </nav>
         <div class="flex items-center gap-2">
@@ -35,6 +56,7 @@
             <a href="#dashboard" class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900">Product</a>
             <a href="#pricing" class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900">Pricing</a>
             <a href="#faq" class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900">FAQ</a>
+            <a href="{{ route('contact') }}" class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900">Contact</a>
             <a href="{{ route('login') }}" class="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900">Login</a>
             <a href="{{ route('register') }}" class="mt-2 gradient-primary text-white text-center px-4 py-2 rounded-lg text-sm font-medium">Get Started</a>
         </nav>
@@ -303,7 +325,7 @@
                         <span class="h-2.5 w-2.5 rounded-full bg-red-400"></span>
                         <span class="h-2.5 w-2.5 rounded-full bg-yellow-400"></span>
                         <span class="h-2.5 w-2.5 rounded-full bg-green-400"></span>
-                        <span class="ml-3 text-xs text-gray-400">app.reconx.com/dashboard</span>
+                        <span class="ml-3 text-xs text-gray-400">app.inveqi.com/dashboard</span>
                     </div>
                     <div class="p-5">
                         <div class="grid grid-cols-3 gap-3">
@@ -344,7 +366,7 @@
 {{-- Stats --}}
 <section class="border-t border-gray-200/60 py-20">
     <div class="mx-auto grid max-w-7xl gap-8 px-6 md:grid-cols-4">
-        @foreach([['10k+', 'Active businesses'], ['$2.4B', 'Invoiced annually'], ['99.99%', 'Uptime SLA'], ['4.9/5', 'Customer rating']] as $s)
+        @foreach([['1k+', 'Active businesses'], ['$50M+', 'Invoiced annually'], ['99.9%', 'Uptime SLA'], ['4.8/5', 'Customer rating']] as $s)
         <div class="text-center">
             <div class="text-gradient text-4xl font-bold">{{ $s[0] }}</div>
             <div class="mt-2 text-sm text-gray-500">{{ $s[1] }}</div>
@@ -362,7 +384,7 @@
         </div>
         <div class="mt-16 grid gap-6 md:grid-cols-3">
             @foreach([
-                ['name' => 'Sarah Chen', 'role' => 'CFO, Lumen Inc', 'quote' => 'ReconX cut our invoicing time by 70%. The Stripe integration just works.'],
+                ['name' => 'Sarah Chen', 'role' => 'CFO, Lumen Inc', 'quote' => 'Inveqi cut our invoicing time by 70%. The Stripe integration just works.'],
                 ['name' => 'Marcus Lee', 'role' => 'Founder, Northwind', 'quote' => 'Finally a tool that looks great and gets out of the way. My team adopted it in a day.'],
                 ['name' => 'Priya Nair', 'role' => 'Ops Lead, Acme', 'quote' => 'The dashboards are stunning and the automations saved us hours every week.'],
             ] as $t)
@@ -403,7 +425,7 @@
         <div class="mt-16 grid gap-6 lg:grid-cols-3">
             @php
                 $plans = [
-                    ['name' => 'Starter', 'monthly' => 0, 'yearly' => 0, 'desc' => 'Perfect for freelancers and small businesses getting started.', 'features' => ['Up to 25 invoices/month', '1 user', 'PDF export', 'Email invoices'], 'popular' => false],
+                    ['name' => 'Starter', 'monthly' => 0, 'yearly' => 0, 'desc' => 'Perfect for freelancers and small businesses getting started.', 'features' => ['Up to 5 invoices/month', '1 user', 'PDF export', 'Email invoices'], 'popular' => false],
                     ['name' => 'Professional', 'monthly' => 30, 'yearly' => 24, 'desc' => 'For growing businesses that need payment collection.', 'features' => ['Unlimited invoices', '5 users', 'Stripe payments', 'Reports & analytics', 'Webhook integrations'], 'popular' => true],
                     ['name' => 'Business', 'monthly' => 80, 'yearly' => 64, 'desc' => 'Advanced features for teams with high volume invoicing.', 'features' => ['Unlimited everything', '25 users', 'Priority support', 'Custom branding', 'API access'], 'popular' => false],
                 ];
@@ -471,12 +493,12 @@
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
         <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
         <h2 class="relative text-4xl font-bold tracking-tight md:text-5xl">Ready to get paid faster?</h2>
-        <p class="relative mx-auto mt-4 max-w-xl opacity-90">Join thousands of businesses streamlining their invoicing with ReconX.</p>
+        <p class="relative mx-auto mt-4 max-w-xl opacity-90">Join thousands of businesses streamlining their invoicing with Inveqi.</p>
         <div class="relative mt-8 flex flex-wrap justify-center gap-3">
             <a href="{{ route('register') }}" class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition">
                 Start your free trial <i class="fas fa-arrow-right ml-2 text-sm"></i>
             </a>
-            <a href="#pricing" class="inline-flex items-center border border-white/30 bg-transparent text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition">
+            <a href="{{ route('contact') }}" class="inline-flex items-center border border-white/30 bg-transparent text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition">
                 Talk to sales
             </a>
         </div>
@@ -484,38 +506,7 @@
 </section>
 
 {{-- Footer --}}
-<footer class="border-t border-gray-200/60 py-12">
-    <div class="mx-auto max-w-7xl px-6">
-        <div class="grid gap-8 md:grid-cols-4">
-            <div>
-                <div class="flex items-center gap-2">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary text-white">
-                        <i class="fas fa-bolt text-sm"></i>
-                    </div>
-                    <span class="text-lg font-bold tracking-tight">ReconX</span>
-                </div>
-                <p class="mt-3 max-w-xs text-sm text-gray-500">Invoice management built for every business.</p>
-            </div>
-            @foreach([
-                ['title' => 'Product', 'links' => ['Features', 'Pricing', 'Integrations', 'Changelog']],
-                ['title' => 'Company', 'links' => ['About', 'Blog', 'Careers', 'Contact']],
-                ['title' => 'Resources', 'links' => ['Docs', 'Help center', 'Status', 'API']],
-            ] as $col)
-            <div>
-                <div class="text-sm font-semibold">{{ $col['title'] }}</div>
-                <ul class="mt-3 space-y-2">
-                    @foreach($col['links'] as $l)
-                    <li><a href="#" class="text-sm text-gray-500 transition hover:text-gray-900">{{ $l }}</a></li>
-                    @endforeach
-                </ul>
-            </div>
-            @endforeach
-        </div>
-        <div class="mt-10 border-t border-gray-200/60 pt-6 text-center text-sm text-gray-500">
-            &copy; {{ date('Y') }} ReconX. All rights reserved.
-        </div>
-    </div>
-</footer>
+@include('landing.partials.footer')
 
 {{-- Scroll to top --}}
 <button id="scrollTopBtn" class="hidden fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full gradient-primary text-white shadow-glow transition hover:scale-110">

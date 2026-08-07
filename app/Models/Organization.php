@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Organization extends Model
 {
@@ -17,7 +18,22 @@ class Organization extends Model
         'status',
         'stripe_customer_id',
         'owner_id',
+        'webhook_identifier',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($organization) {
+            if (empty($organization->webhook_identifier)) {
+                $organization->webhook_identifier = (string) Str::uuid();
+            }
+        });
+    }
+
+    public function webhookSetting(): HasOne
+    {
+        return $this->hasOne(WebhookSetting::class);
+    }
 
     public function owner(): BelongsTo
     {

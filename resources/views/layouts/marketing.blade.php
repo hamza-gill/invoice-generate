@@ -3,9 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'ReconX - Invoice Management Software')</title>
-    <meta name="description" content="ReconX is invoice management software with a drag-and-drop builder, recurring invoices, estimates & quotes, and 10+ templates. Get paid faster with Stripe. Free 14-day trial.">
-    <meta name="keywords" content="invoice software, online invoicing, recurring invoices, estimates and quotes, invoice templates, invoice builder, billing software, Stripe invoicing, small business invoicing">
+    <title>@yield('title', 'Inveqi - Invoice Management Software')</title>
+
+    <meta name="description" content="@yield('meta_description', 'Inveqi is invoice management software with a drag-and-drop builder, recurring invoices, estimates & quotes, and 10+ professional templates. Create, send and track invoices online and get paid faster with Stripe. Start your free 14-day trial today.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'invoice software, free invoice generator, online invoicing, create invoice online, invoice maker, invoice templates, recurring invoices, estimates and quotes, billing software, invoice management, invoice builder, small business invoicing, Stripe invoicing, PDF invoices, payment reminders')">
+    <meta name="author" content="Inveqi">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="googlebot" content="index, follow">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+
+    <meta property="og:type" content="@hasSection('og_type')@yield('og_type')@else website @endif">
+    <meta property="og:site_name" content="Inveqi">
+    <meta property="og:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title')@endif">
+    <meta property="og:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description')@endif">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('images/hero-invoice.jpg') }}">
+    <meta property="og:locale" content="en_US">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title')@endif">
+    <meta name="twitter:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description')@endif">
+    <meta name="twitter:image" content="{{ asset('images/hero-invoice.jpg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -47,6 +66,30 @@
         .feature-card:hover .bottom-glow { opacity: 1; }
         [x-cloak] { display: none !important; }
     </style>
+    @stack('jsonld')
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@graph": [
+            {
+                "@@type": "Organization",
+                "@@id": "{{ url('/') }}#organization",
+                "name": "Inveqi",
+                "url": "{{ url('/') }}",
+                "logo": "{{ asset('images/hero-invoice.jpg') }}",
+                "sameAs": []
+            },
+            {
+                "@@type": "WebSite",
+                "@@id": "{{ url('/') }}#website",
+                "url": "{{ url('/') }}",
+                "name": "Inveqi - Invoice Management Software",
+                "description": "Create, send and track professional invoices, estimates and recurring billing online.",
+                "publisher": { "@@id": "{{ url('/') }}#organization" }
+            }
+        ]
+    }
+    </script>
 </head>
 <body class="bg-white text-gray-900 min-h-screen antialiased">
 

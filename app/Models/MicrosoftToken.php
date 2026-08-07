@@ -12,6 +12,7 @@ class MicrosoftToken extends Model
     protected $table = 'microsoft_tokens';
 
     protected $fillable = [
+        'organization_id',
         'access_token',
         'refresh_token',
         'expires_in',
