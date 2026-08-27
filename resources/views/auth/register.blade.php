@@ -64,13 +64,27 @@
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" name="password" required
-                           class="auth-input !pl-4" placeholder="Min. 8 characters" style="padding-left: 1rem;">
+                    <div class="relative">
+                        <input type="password" name="password" id="password" required
+                               class="auth-input !pl-4 !pr-10" placeholder="Min. 8 characters" style="padding-left: 1rem;">
+                        <button type="button" data-toggle-password="password"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700">Confirm password</label>
-                    <input type="password" name="password_confirmation" required
-                           class="auth-input !pl-4" placeholder="Repeat password" style="padding-left: 1rem;">
+                    <div class="relative">
+                        <input type="password" name="password_confirmation" id="password_confirmation" required
+                               class="auth-input !pl-4 !pr-10" placeholder="Repeat password" style="padding-left: 1rem;">
+                        <button type="button" data-toggle-password="password_confirmation"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                aria-label="Show confirm password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -99,4 +113,23 @@
             </p>
         </form>
     </div>
+
+    <script>
+        document.querySelectorAll('[data-toggle-password]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var input = document.getElementById(this.getAttribute('data-toggle-password'));
+                if (!input) return;
+                var icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    </script>
 @endsection
