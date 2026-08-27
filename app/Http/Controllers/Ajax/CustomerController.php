@@ -38,6 +38,7 @@ class CustomerController extends Controller
                     'last_name' =>  $c->last_name,
                     'company_name' => $c->company_name,
                     'email' => $c->email,
+                    'phone_number' => $c->phone_number,
                     'address' => $c->address,
                     'city' => $c->city,
                     'country' => $c->country,

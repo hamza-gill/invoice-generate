@@ -4,7 +4,7 @@
 @php($hideNavbar = true)
 
 @section('content')
-    <div class="bg-gray-50">
+    <div class="min-h-screen bg-gray-50 flex flex-col">
 
         {{-- Header --}}
         <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
@@ -116,6 +116,11 @@
                             </div>
 
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="text" id="customer_phone_number" name="phone_number" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
+                            </div>
+
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
                                 <input type="text" id="customer_address" name="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
@@ -135,7 +140,13 @@
                                 <input type="text" id="customer_postal_code" name="postal_code" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
-                            <input type="hidden" name="country" value="US">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                                <select id="customer_country" name="country" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white">
+                                    <option value="">Select country</option>
+                                    @include('customers.partials.countries')
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -146,7 +157,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Project Address</label>
                             <input type="text" id="project_address" name="project_address" placeholder="Start typing the address..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" autocomplete="off">
                             <p class="text-xs text-gray-500 mt-2">
-                                Start typing to search for an address in the U.S. — or type it manually if it's not listed.
+                                Start typing to search for an address — or type it manually if it's not listed.
                             </p>
                         </div>
                     </div>
@@ -256,17 +267,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {{-- CUSTOM FIELDS --}}
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-800">Custom Fields</h3>
-                            <button type="button" id="addCustomField" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700">
-                                <i class="fas fa-plus mr-1"></i>Add Field
-                            </button>
-                        </div>
-                        <div id="customFieldsContainer" class="space-y-3"></div>
                     </div>
 
                     {{-- NOTES --}}
@@ -388,7 +388,7 @@
             function showCustomerFields(editable){
                 $customerFields.removeClass('hidden');
                 $requiredCustomerInputs.prop('required', true);
-                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_address, #customer_city, #customer_state, #customer_postal_code')
+                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_phone_number, #customer_address, #customer_city, #customer_state, #customer_postal_code, #customer_country')
                     .prop('readonly', !editable);
             }
 
@@ -398,8 +398,14 @@
             }
 
             function clearCustomerFields(){
-                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_address, #customer_city, #customer_state, #customer_postal_code').val('');
+                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_phone_number, #customer_address, #customer_city, #customer_state, #customer_postal_code').val('');
+                $('#customer_country').val('').trigger('change');
             }
+            $('#customer_country').select2({
+                placeholder: 'Select country',
+                allowClear: true,
+                width: '100%'
+            });
 
             $('#customerSelect').select2({
                 placeholder: 'Search customer or add a new one...',
@@ -416,6 +422,7 @@
                                 first_name: c.first_name,
                                 last_name: c.last_name,
                                 email: c.email,
+                                phone_number: c.phone_number,
                                 address: c.address,
                                 city: c.city,
                                 company_name: c.company_name,
@@ -446,10 +453,12 @@
                 $('#customer_last_name').val(data.last_name);
                 $('#customer_company_name').val(data.company_name);
                 $('#customer_email').val(data.email);
+                $('#customer_phone_number').val(data.phone_number);
                 $('#customer_address').val(data.address);
                 $('#customer_city').val(data.city);
                 $('#customer_state').val(data.state);
                 $('#customer_postal_code').val(data.postal_code);
+                $('#customer_country').val(data.country).trigger('change');
 
                 // Existing customer picked — values are already set, no need to show the fields
                 hideCustomerFields();
@@ -562,27 +571,6 @@
                         });
                     });
                 }
-            });
-
-            // Custom Fields
-            const cfContainer = document.getElementById('customFieldsContainer');
-            document.getElementById('addCustomField').addEventListener('click', function() {
-                const idx = cfContainer.children.length;
-                const row = document.createElement('div');
-                row.className = 'grid grid-cols-12 gap-3 items-center';
-                row.innerHTML = `
-                    <div class="col-span-5">
-                        <input type="text" name="custom_fields[${idx}][label]" placeholder="Field name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                    <div class="col-span-6">
-                        <input type="text" name="custom_fields[${idx}][value]" placeholder="Value" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
-                    </div>
-                    <div class="col-span-1 text-center">
-                        <button type="button" class="remove-cf text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                    </div>
-                `;
-                cfContainer.appendChild(row);
-                row.querySelector('.remove-cf').addEventListener('click', () => row.remove());
             });
 
             // ---- Shared modal open/close helpers (animated, Escape + backdrop dismiss, scroll lock) ----
@@ -728,7 +716,6 @@
 
                 const autocomplete=new google.maps.places.Autocomplete(input,{
                     types:['address'],
-                    componentRestrictions:{country:'us'},
                     fields:['formatted_address']
                 });
 

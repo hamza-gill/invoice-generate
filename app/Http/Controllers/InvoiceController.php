@@ -162,7 +162,8 @@ class InvoiceController extends Controller
                     'address' => $request->input('address'),
                     'company_name' => $request->input('company_name'),
                     'city' => $request->input('city'),
-                    'country' => 'USA',
+                    'phone_number' => $request->input('phone_number'),
+                    'country' => $request->input('country', 'USA'),
                     'state' => $request->input('state'),
                     'postal_code' => $request->input('postal_code'),
                 ]

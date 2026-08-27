@@ -144,24 +144,6 @@
                         </div>
                     </div>
 
-                    {{-- CUSTOM FIELDS --}}
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">
-                                <i class="fas fa-sliders-h text-blue-600 mr-2"></i>Custom Fields
-                            </h3>
-                            <button type="button" id="addCustomField" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 border border-gray-200">
-                                <i class="fas fa-plus mr-1"></i>Add Field
-                            </button>
-                        </div>
-
-                        <div id="customFieldsContainer" class="space-y-3"></div>
-
-                        <p class="text-xs text-gray-400 mt-3" id="noFieldsText">
-                            <i class="fas fa-info-circle mr-1"></i>Add custom key-value fields to include extra information on the estimate.
-                        </p>
-                    </div>
-
                     {{-- NOTES --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Notes</h3>
@@ -327,31 +309,6 @@
             document.getElementById('discount').addEventListener('input', updateTotal);
             updateTotal();
 
-            // CUSTOM FIELDS
-            const cfContainer = document.getElementById('customFieldsContainer');
-            const addCfBtn = document.getElementById('addCustomField');
-            const noFieldsText = document.getElementById('noFieldsText');
-
-            function updateNoFieldsText(){
-                noFieldsText.style.display = cfContainer.children.length === 0 ? '' : 'none';
-            }
-
-            addCfBtn.addEventListener('click', function(){
-                const index = cfContainer.children.length;
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-3';
-                row.innerHTML = `
-                    <input type="text" name="custom_fields[${index}][key]" placeholder="Field name" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
-                    <input type="text" name="custom_fields[${index}][value]" placeholder="Value" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
-                    <button type="button" class="remove-cf text-red-500 hover:text-red-700 p-2"><i class="fas fa-times-circle text-lg"></i></button>
-                `;
-                cfContainer.appendChild(row);
-
-                row.querySelector('.remove-cf').addEventListener('click', () => { row.remove(); updateNoFieldsText(); });
-                updateNoFieldsText();
-            });
-
-            updateNoFieldsText();
         });
     </script>
 @endsection
