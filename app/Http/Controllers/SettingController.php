@@ -80,7 +80,7 @@ class SettingController extends Controller
 
         $setting = Setting::firstOrNew();
 
-        // Keep the existing password when the field is left blank/masked
+        // Keep the existing password when the field is left blank
         if (empty($validated['mail_password']) || str_starts_with((string) $validated['mail_password'], '***')) {
             unset($validated['mail_password']);
         }

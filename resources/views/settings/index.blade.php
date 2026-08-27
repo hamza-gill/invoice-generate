@@ -213,119 +213,37 @@
                         <form method="POST" action="{{ route('settings.integration.update') }}" class="space-y-6">
                             @csrf
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                @php
-                                    $userRole = auth()->user()->role ?? 'manager';
-                                    $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
-
-                                    // Get ACTUAL values (never mask in PHP for form submission)
-                                    $stripePublicKey = $setting->stripe_public_key ?? '';
-                                    $stripeSecretKey = $setting->stripe_secret_key ?? '';
-                                    $webhookUrl = $webhookUrl ?? '';
-                                    $webhookSecret = $setting->webhook_secret ?? '';
-                                    $googleKey = $setting->google_places_key ?? '';
-
-                                    // Create MASKED versions for DISPLAY only
-                                    $maskedPublicKey = $stripePublicKey
-                                        ? str_repeat('*', max(0, strlen($stripePublicKey) - 4)) . substr($stripePublicKey, -4)
-                                        : '';
-                                    $maskedSecretKey = $stripeSecretKey
-                                        ? str_repeat('*', max(0, strlen($stripeSecretKey) - 4)) . substr($stripeSecretKey, -4)
-                                        : '';
-                                    $maskedWebhookUrl = $webhookUrl
-                                        ? str_repeat('*', max(0, strlen($webhookUrl) - 4)) . substr($webhookUrl, -4)
-                                        : '';
-                                    $maskedWebhookSecret = $webhookSecret
-                                        ? str_repeat('*', max(0, strlen($webhookSecret) - 4)) . substr($webhookSecret, -4)
-                                        : '';
-                                    $maskedGoogleKey = $googleKey
-                                        ? str_repeat('*', max(0, strlen($googleKey) - 4)) . substr($googleKey, -4)
-                                        : '';
-                                @endphp
-
-                                    <!-- Stripe Public Key -->
+                                <!-- Stripe Public Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Public Key</label>
-                                    <div class="flex items-center space-x-3">
-                                        <!-- Hidden field with ACTUAL value (this gets submitted) -->
-                                        <input type="hidden"
-                                               name="stripe_public_key"
-                                               id="stripe_public_key_actual"
-                                               value="{{ old('stripe_public_key', $stripePublicKey) }}">
-
-                                        <!-- Display field with MASKED value (for UI only) -->
-                                        <input type="password"
-                                               id="stripe_public_key_display"
-                                               value="{{ $maskedPublicKey }}"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                               placeholder="pk_live_xxxxx"
-                                               data-actual-field="stripe_public_key_actual"
-                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="stripe_public_key_display"
-                                                    data-actual-field="stripe_public_key_actual"
-                                                    data-full-key="{{ $stripePublicKey }}"
-                                                    data-masked-key="{{ $maskedPublicKey }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="stripe_public_key"
+                                           value="{{ old('stripe_public_key', $setting->stripe_public_key ?? '') }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="pk_live_xxxxx"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
                                 </div>
 
                                 <!-- Stripe Secret Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Stripe Secret Key</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="hidden"
-                                               name="stripe_secret_key"
-                                               id="stripe_secret_key_actual"
-                                               value="{{ old('stripe_secret_key', $stripeSecretKey) }}">
-
-                                        <input type="password"
-                                               id="stripe_secret_key_display"
-                                               value="{{ $maskedSecretKey }}"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                               placeholder="sk_live_xxxxx"
-                                               data-actual-field="stripe_secret_key_actual"
-                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="stripe_secret_key_display"
-                                                    data-actual-field="stripe_secret_key_actual"
-                                                    data-full-key="{{ $stripeSecretKey }}"
-                                                    data-masked-key="{{ $maskedSecretKey }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="stripe_secret_key"
+                                           value="{{ old('stripe_secret_key', $setting->stripe_secret_key ?? '') }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="sk_live_xxxxx"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
                                 </div>
 
                                 <!-- Webhook URL -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
                                     <div class="flex items-center space-x-3">
-                                        <input type="password"
-                                               id="webhook_url_display"
+                                        <input type="text"
+                                               name="webhook_url"
                                                readonly
-                                               value="{{ $maskedWebhookUrl }}"
+                                               value="{{ $webhookUrl }}"
                                                class="w-full border border-gray-300 rounded-lg p-2.5 bg-gray-100 cursor-not-allowed">
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="webhook_url_display"
-                                                    data-full-key="{{ $webhookUrl }}"
-                                                    data-masked-key="{{ $maskedWebhookUrl }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-
                                         <button type="button"
                                                 onclick="copyWebhook('{{ $webhookUrl }}')"
                                                 class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition">
@@ -338,62 +256,23 @@
                                 <!-- Webhook Secret -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="hidden"
-                                               name="webhook_secret"
-                                               id="integration_webhook_secret_actual"
-                                               value="{{ old('webhook_secret', $webhookSecret) }}">
-
-                                        <input type="password"
-                                               id="integration_webhook_secret_display"
-                                               value="{{ $maskedWebhookSecret }}"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                               data-actual-field="integration_webhook_secret_actual"
-                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="integration_webhook_secret_display"
-                                                    data-actual-field="integration_webhook_secret_actual"
-                                                    data-full-key="{{ $webhookSecret }}"
-                                                    data-masked-key="{{ $maskedWebhookSecret }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="webhook_secret"
+                                           value="{{ old('webhook_secret', $setting->webhook_secret ?? '') }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="whsec_xxxxx"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
                                 </div>
 
                                 <!-- Google Places API Key -->
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Google Places API Key</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="hidden"
-                                               name="google_places_key"
-                                               id="google_places_key_actual"
-                                               value="{{ old('google_places_key', $googleKey) }}">
-
-                                        <input type="password"
-                                               id="google_places_key_display"
-                                               value="{{ $maskedGoogleKey }}"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                               placeholder="Enter your Google Places API Key"
-                                               data-actual-field="google_places_key_actual"
-                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="google_places_key_display"
-                                                    data-actual-field="google_places_key_actual"
-                                                    data-full-key="{{ $googleKey }}"
-                                                    data-masked-key="{{ $maskedGoogleKey }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="google_places_key"
+                                           value="{{ old('google_places_key', $setting->google_places_key ?? '') }}"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Enter your Google Places API Key"
+                                        {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
                                 </div>
                             </div>
 
@@ -428,10 +307,9 @@
 
                             @php
                                 $presets = \App\Services\MailConfigurationService::providerPresets();
+                                $userRole = auth()->user()->role ?? 'manager';
+                                $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
                                 $mailPassword = $setting->mail_password ?? '';
-                                $maskedMailPassword = $mailPassword
-                                    ? str_repeat('*', max(0, strlen($mailPassword) - 4)) . substr($mailPassword, -4)
-                                    : '';
                                 $mailFromAddress = $setting->mail_from_address ?? '';
                                 $mailFromName = $setting->mail_from_name ?? '';
                                 $isMicrosoftConnected = $setting->organization_id
@@ -500,26 +378,11 @@
 
                                     <div>
                                         <label class="block text-gray-600 font-medium mb-2">Password / API Key</label>
-                                        <div class="flex items-center space-x-3">
-                                            <input type="hidden" name="mail_password" id="mail_password_actual"
-                                                   value="{{ old('mail_password', $mailPassword) }}">
-                                            <input type="password" id="mail_password_display"
-                                                   value="{{ $maskedMailPassword }}"
-                                                   class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                                   placeholder="••••••••"
-                                                   data-actual-field="mail_password_actual"
-                                                {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
-                                            @if($isAdminOrDeveloper)
-                                                <button type="button"
-                                                        class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                        data-display-field="mail_password_display"
-                                                        data-actual-field="mail_password_actual"
-                                                        data-full-key="{{ $mailPassword }}"
-                                                        data-masked-key="{{ $maskedMailPassword }}">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <input type="text" name="mail_password"
+                                               value="{{ old('mail_password', $mailPassword) }}"
+                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                               placeholder="SMTP password or API key"
+                                            {{ !Gate::allows('updateIntegration', $setting) ? 'disabled' : '' }}>
                                     </div>
                                 </div>
 
@@ -634,81 +497,30 @@
                             @csrf
 
                             @php
-                                $userRole = auth()->user()->role ?? 'manager';
-                                $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
-
-                                // Get ACTUAL values
                                 $taxId = $setting->tax_id ?? '';
                                 $invoiceNumber = $setting->starting_invoice_number ?? 'INV-' . date('Y') . '-001';
-
-                                // Create MASKED versions for display
-                                $maskedTaxId = $taxId
-                                    ? str_repeat('*', max(0, strlen($taxId) - 4)) . substr($taxId, -4)
-                                    : '';
-                                $maskedInvoiceNumber = $invoiceNumber
-                                    ? str_repeat('*', max(0, strlen($invoiceNumber) - 4)) . substr($invoiceNumber, -4)
-                                    : '';
                             @endphp
 
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Tax ID</label>
-                                <div class="flex items-center space-x-3">
-                                    <input type="hidden"
-                                           name="tax_id_invoice"
-                                           id="tax_id_invoice_actual"
-                                           value="{{ old('tax_id_invoice', $taxId) }}">
-
-                                    <input type="password"
-                                           id="tax_id_invoice_display"
-                                           value="{{ $maskedTaxId }}"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="123-456-789"
-                                           data-actual-field="tax_id_invoice_actual"
-                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-
-                                    @if($isAdminOrDeveloper)
-                                        <button type="button"
-                                                class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                data-display-field="tax_id_invoice_display"
-                                                data-actual-field="tax_id_invoice_actual"
-                                                data-full-key="{{ $taxId }}"
-                                                data-masked-key="{{ $maskedTaxId }}">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    @endif
-                                </div>
-                                <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                <input type="text"
+                                       name="tax_id_invoice"
+                                       value="{{ old('tax_id_invoice', $taxId) }}"
+                                       class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="123-456-789"
+                                    {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
                             </div>
 
                             <div>
                                 <label class="block text-gray-600 font-medium mb-2">Starting Invoice Number</label>
-                                <div class="flex items-center space-x-3">
-                                    <input type="hidden"
-                                           name="starting_invoice_number"
-                                           id="starting_invoice_number_actual"
-                                           value="{{ old('starting_invoice_number', $invoiceNumber) }}">
-
-                                    <input type="password"
-                                           id="starting_invoice_number_display"
-                                           value="{{ $maskedInvoiceNumber }}"
-                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="INV-2025-001"
-                                           data-actual-field="starting_invoice_number_actual"
-                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-
-                                    @if($isAdminOrDeveloper)
-                                        <button type="button"
-                                                class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                data-display-field="starting_invoice_number_display"
-                                                data-actual-field="starting_invoice_number_actual"
-                                                data-full-key="{{ $invoiceNumber }}"
-                                                data-masked-key="{{ $maskedInvoiceNumber }}">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    @endif
-                                </div>
+                                <input type="text"
+                                       name="starting_invoice_number"
+                                       value="{{ old('starting_invoice_number', $invoiceNumber) }}"
+                                       class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="INV-2025-001"
+                                    {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
                                 <p class="text-sm text-gray-500 mt-1">
-                                    Only the last 4 characters are shown by default. Set the starting invoice number. The next invoices will auto-increment from this number.
+                                    Set the starting invoice number. The next invoices will auto-increment from this number.
                                     <br>Format: <code>INV-YYYY-NNN</code> (e.g., <code>INV-{{ date('Y') }}-001</code>)
                                 </p>
                             </div>
@@ -768,98 +580,6 @@
                                         <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-5 transition-transform"></div>
                                     </label>
                                 </div>
-
-                                <div class="flex items-center justify-between mt-3">
-                                    <span class="text-gray-700 font-medium">Enable Rush Delivery</span>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" name="enable_rush_delivery" value="1"
-                                               id="enable_rush_delivery_toggle"
-                                               class="sr-only peer"
-                                            {{ old('enable_rush_delivery', $setting->enable_rush_delivery) ? 'checked' : '' }}
-                                            {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-600 transition-all"></div>
-                                        <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-5 transition-transform"></div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {{-- 🚀 Rush Delivery Options Configuration --}}
-                            <div id="rush_delivery_section" class="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-lg {{ old('enable_rush_delivery', $setting->enable_rush_delivery) ? '' : 'hidden' }}">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-xl font-semibold text-gray-800">Rush Delivery Options</h3>
-                                    <button type="button"
-                                            id="add_rush_option"
-                                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all"
-                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-                                        <i class="fas fa-plus mr-2"></i>Add Option
-                                    </button>
-                                </div>
-
-                                <p class="text-sm text-gray-600 mb-4">
-                                    Configure rush delivery options for invoices. Customers will be able to select from these options during checkout.
-                                </p>
-
-                                <div id="rush_options_container" class="space-y-4">
-                                    @php
-                                        $rushOptions = old('rush_options', $setting->rush_delivery_options ?? $setting->getDefaultRushOptions());
-                                    @endphp
-
-                                    @foreach ($rushOptions as $index => $option)
-                                        <div class="rush-option-item bg-white p-4 border border-gray-300 rounded-lg" data-index="{{ $index }}">
-                                            <div class="flex items-end gap-4">
-                                                <div class="flex-1">
-                                                    <label class="block text-gray-600 font-medium mb-2">Label</label>
-                                                    <input type="text"
-                                                           name="rush_options[{{ $index }}][label]"
-                                                           value="{{ $option['label'] ?? '' }}"
-                                                           placeholder="e.g., Express Delivery"
-                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                                           required
-                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-                                                </div>
-
-                                                <div class="w-40">
-                                                    <label class="block text-gray-600 font-medium mb-2">Days</label>
-                                                    <input type="text"
-                                                           name="rush_options[{{ $index }}][days]"
-                                                           value="{{ $option['days'] ?? '' }}"
-                                                           placeholder="2 or 'standard'"
-                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                                           required
-                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-                                                    <p class="text-xs text-gray-500 mt-1">Number or 'standard'</p>
-                                                </div>
-
-                                                <div class="w-32">
-                                                    <label class="block text-gray-600 font-medium mb-2">Fee ($)</label>
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           name="rush_options[{{ $index }}][fee]"
-                                                           value="{{ $option['fee'] ?? 0 }}"
-                                                           placeholder="0.00"
-                                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                                                           required
-                                                        {{ !Gate::allows('updateInvoice', $setting) ? 'disabled' : '' }}>
-                                                </div>
-
-                                                @can('updateInvoice', $setting)
-                                                    <button type="button"
-                                                            class="remove-rush-option bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition-all"
-                                                            onclick="removeRushOption(this)">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                @endcan
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <p class="text-sm text-blue-700">
-                                        <i class="fas fa-info-circle mr-2"></i>
-                                        <strong>Tip:</strong> For standard delivery (no rush fee), use 'standard' in the Days field and set Fee to 0.
-                                    </p>
-                                </div>
                             </div>
 
                             @can('updateInvoice', $setting)
@@ -915,80 +635,28 @@
                                 @csrf
 
                                 @php
-                                    $userRole = auth()->user()->role ?? 'manager';
-                                    $isAdminOrDeveloper = in_array($userRole, ['admin', 'developer']);
-
-                                    // Get ACTUAL values
                                     $webhookSettingUrl = $webhookSetting->webhook_url ?? '';
                                     $webhookSettingSecret = $webhookSetting->webhook_secret ?? '';
-
-                                    // Create MASKED versions
-                                    $maskedWebhookSettingUrl = $webhookSettingUrl
-                                        ? str_repeat('*', max(0, strlen($webhookSettingUrl) - 4)) . substr($webhookSettingUrl, -4)
-                                        : '';
-                                    $maskedWebhookSettingSecret = $webhookSettingSecret
-                                        ? str_repeat('*', max(0, strlen($webhookSettingSecret) - 4)) . substr($webhookSettingSecret, -4)
-                                        : '';
                                 @endphp
 
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook URL</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="hidden"
-                                               name="webhook_url"
-                                               id="webhook_setting_url_actual"
-                                               value="{{ old('webhook_url', $webhookSettingUrl) }}">
-
-                                        <input type="password"
-                                               id="webhook_setting_url_display"
-                                               value="{{ $maskedWebhookSettingUrl }}"
-                                               placeholder="https://example.com/webhook"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               data-actual-field="webhook_setting_url_actual"
-                                            {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="webhook_setting_url_display"
-                                                    data-actual-field="webhook_setting_url_actual"
-                                                    data-full-key="{{ $webhookSettingUrl }}"
-                                                    data-masked-key="{{ $maskedWebhookSettingUrl }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="webhook_url"
+                                           value="{{ old('webhook_url', $webhookSettingUrl) }}"
+                                           placeholder="https://example.com/webhook"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
                                 </div>
 
                                 <div>
                                     <label class="block text-gray-600 font-medium mb-2">Webhook Secret</label>
-                                    <div class="flex items-center space-x-3">
-                                        <input type="hidden"
-                                               name="webhook_secret"
-                                               id="webhook_setting_secret_actual"
-                                               value="{{ old('webhook_secret', $webhookSettingSecret) }}">
-
-                                        <input type="password"
-                                               id="webhook_setting_secret_display"
-                                               value="{{ $maskedWebhookSettingSecret }}"
-                                               placeholder="secret-key"
-                                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               data-actual-field="webhook_setting_secret_actual"
-                                            {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
-
-                                        @if($isAdminOrDeveloper)
-                                            <button type="button"
-                                                    class="toggle-key-btn bg-gray-100 border border-gray-300 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition"
-                                                    data-display-field="webhook_setting_secret_display"
-                                                    data-actual-field="webhook_setting_secret_actual"
-                                                    data-full-key="{{ $webhookSettingSecret }}"
-                                                    data-masked-key="{{ $maskedWebhookSettingSecret }}">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">Only the last 4 characters are shown by default.</p>
+                                    <input type="text"
+                                           name="webhook_secret"
+                                           value="{{ old('webhook_secret', $webhookSettingSecret) }}"
+                                           placeholder="secret-key"
+                                           class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        {{ !Gate::allows('updateWebhook', $webhookSetting ?? new App\Models\WebhookSetting) ? 'disabled' : '' }}>
                                 </div>
 
                                 <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-3">Customer Events</h3>
@@ -1212,7 +880,7 @@
             contentSecurity: document.getElementById('tab-content-security'),
         };
 
-        function switchTab(activeTab, activeContent) {
+        function switchTab(activeTab, activeContent, tabKey) {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('text-blue-600', 'bg-blue-50', 'border-blue-600');
                 btn.classList.add('text-gray-600', 'border-transparent');
@@ -1221,14 +889,30 @@
 
             document.querySelectorAll('[id^="tab-content-"]').forEach(content => content.classList.add('hidden'));
             activeContent.classList.remove('hidden');
+
+            if (tabKey) {
+                localStorage.setItem('inveqi_active_tab', tabKey);
+            }
         }
 
-        tabs.org?.addEventListener('click', () => switchTab(tabs.org, tabs.contentOrg));
-        tabs.int?.addEventListener('click', () => switchTab(tabs.int, tabs.contentInt));
-        tabs.mail?.addEventListener('click', () => switchTab(tabs.mail, tabs.contentMail));
-        tabs.invoice?.addEventListener('click', () => switchTab(tabs.invoice, tabs.contentInvoice));
-        tabs.webhook?.addEventListener('click', () => switchTab(tabs.webhook, tabs.contentWebhook));
-        tabs.sec?.addEventListener('click', () => switchTab(tabs.sec, tabs.contentSecurity));
+        const tabMap = [
+            { key: 'org', btn: tabs.org, content: tabs.contentOrg },
+            { key: 'int', btn: tabs.int, content: tabs.contentInt },
+            { key: 'mail', btn: tabs.mail, content: tabs.contentMail },
+            { key: 'invoice', btn: tabs.invoice, content: tabs.contentInvoice },
+            { key: 'webhook', btn: tabs.webhook, content: tabs.contentWebhook },
+            { key: 'security', btn: tabs.sec, content: tabs.contentSecurity },
+        ];
+
+        tabMap.forEach(tab => {
+            tab.btn?.addEventListener('click', () => switchTab(tab.btn, tab.content, tab.key));
+        });
+
+        const savedTab = localStorage.getItem('inveqi_active_tab') || 'org';
+        const active = tabMap.find(t => t.key === savedTab && t.btn && t.content);
+        if (active) {
+            switchTab(active.btn, active.content);
+        }
 
         // Mail provider field toggling + presets
         const mailPresets = @json(\App\Services\MailConfigurationService::providerPresets());
@@ -1266,80 +950,5 @@
 
         mailProviderSelect?.addEventListener('change', applyMailProviderFields);
         applyMailProviderFields();
-
-        // Rush Delivery Toggle
-        document.getElementById('enable_rush_delivery_toggle')?.addEventListener('change', function() {
-            const rushSection = document.getElementById('rush_delivery_section');
-            if (this.checked) {
-                rushSection.classList.remove('hidden');
-            } else {
-                rushSection.classList.add('hidden');
-            }
-        });
-
-        // Add Rush Option
-        let rushOptionIndex = {{ count($rushOptions ?? []) }};
-        document.getElementById('add_rush_option')?.addEventListener('click', function() {
-            const container = document.getElementById('rush_options_container');
-            const newOption = `
-            <div class="rush-option-item bg-white p-4 border border-gray-300 rounded-lg" data-index="${rushOptionIndex}">
-                <div class="flex items-end gap-4">
-                    <div class="flex-1">
-                        <label class="block text-gray-600 font-medium mb-2">Label</label>
-                        <input type="text"
-                               name="rush_options[${rushOptionIndex}][label]"
-                               placeholder="e.g., Express Delivery"
-                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                               required>
-                    </div>
-
-                    <div class="w-40">
-                        <label class="block text-gray-600 font-medium mb-2">Days</label>
-                        <input type="text"
-                               name="rush_options[${rushOptionIndex}][days]"
-                               placeholder="2 or 'standard'"
-                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                               required>
-                        <p class="text-xs text-gray-500 mt-1">Number or 'standard'</p>
-                    </div>
-
-                    <div class="w-32">
-                        <label class="block text-gray-600 font-medium mb-2">Fee ($)</label>
-                        <input type="number"
-                               step="0.01"
-                               name="rush_options[${rushOptionIndex}][fee]"
-                               placeholder="0.00"
-                               class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
-                               required>
-                    </div>
-
-                    <button type="button"
-                            class="remove-rush-option bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition-all"
-                            onclick="removeRushOption(this)">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-            container.insertAdjacentHTML('beforeend', newOption);
-            rushOptionIndex++;
-        });
-
-        // Remove Rush Option
-        function removeRushOption(button) {
-            const container = document.getElementById('rush_options_container');
-            const items = container.querySelectorAll('.rush-option-item');
-
-            if (items.length > 1) {
-                button.closest('.rush-option-item').remove();
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Cannot Remove',
-                    text: 'At least one rush delivery option must be configured.',
-                    confirmButtonColor: '#3B82F6'
-                });
-            }
-        }
     </script>
 @endsection
