@@ -1,4 +1,4 @@
-<aside class="w-56 bg-sidebar text-white flex flex-col min-h-screen">
+<aside class="w-56 bg-sidebar text-white flex flex-col h-screen sticky top-0">
     <!-- 🌐 Logo Section -->
     <div class="p-6 border-b border-gray-700">
         <div class="flex items-center space-x-3">
@@ -17,7 +17,7 @@
     </div>
 
     <!-- 📋 Navigation Menu -->
-    <nav class="flex-1 px-3 py-6 space-y-1">
+    <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
         <!-- Dashboard - Available to all authenticated users -->
         <a href="{{ route('dashboard') }}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
@@ -132,7 +132,7 @@
     </nav>
 
     <!-- 💬 Help & Support - Available to all authenticated users -->
-    <div class="p-3 border-t border-gray-700">
+    <div class="p-3 border-t border-gray-700 flex-shrink-0">
         <a href="{{ route('help') }}"
            class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
                   {{ request()->routeIs('help') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">

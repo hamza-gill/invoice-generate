@@ -29,11 +29,6 @@
             overflow-y: auto;
             scroll-behavior: smooth;
         }
-
-        /* ✅ Disable nested overflow issues */
-        body, .flex, .flex-1 {
-            overflow: visible !important;
-        }
     </style>
 </head>
 
