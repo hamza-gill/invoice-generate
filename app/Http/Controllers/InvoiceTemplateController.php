@@ -50,4 +50,13 @@ class InvoiceTemplateController extends Controller
 
         return back()->with('success', 'Custom CSS saved successfully.');
     }
+
+    public function previewEmbed(InvoiceTemplate $template)
+    {
+        $globalSettings = Setting::withoutGlobalScopes()
+            ->where('organization_id', Auth::user()->organization_id)
+            ->first();
+
+        return view('templates.preview-embed', compact('template', 'globalSettings'));
+    }
 }

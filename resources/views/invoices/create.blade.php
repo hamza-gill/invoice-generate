@@ -4,7 +4,7 @@
 @php($hideNavbar = true)
 
 @section('content')
-    <div class="min-h-screen bg-gray-50 flex flex-col">
+    <div class="bg-gray-50">
 
         {{-- Header --}}
         <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm sticky top-0 z-20">
@@ -37,54 +37,72 @@
 
                     {{-- TEMPLATE SELECTION --}}
                     @if(isset($templates) && $templates->count())
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Invoice Template</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="invoice_template_id" value="" class="hidden peer" checked>
-                                <div class="border-2 border-gray-200 peer-checked:border-blue-600 rounded-xl p-4 text-center hover:border-blue-300 transition">
-                                    <i class="fas fa-file-alt text-2xl text-gray-400 mb-2"></i>
-                                    <p class="text-sm font-medium">Default</p>
-                                </div>
-                            </label>
-                            @foreach($templates as $tpl)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="invoice_template_id" value="{{ $tpl->id }}" class="hidden peer">
-                                <div class="border-2 border-gray-200 peer-checked:border-blue-600 rounded-xl p-4 text-center hover:border-blue-300 transition">
-                                    <div class="w-full h-16 rounded-lg mb-2" style="background: {{ $tpl->config['primary_color'] ?? '#3B82F6' }}20;"></div>
-                                    <p class="text-sm font-medium truncate">{{ $tpl->name }}</p>
-                                </div>
-                            </label>
-                            @endforeach
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-800">Invoice Template</h3>
+                                <span class="text-xs text-gray-400">Click a card to select &middot; use "Preview" to see the full layout</span>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="cursor-pointer group">
+                                    <input type="radio" name="invoice_template_id" value="" class="hidden peer template-radio" checked>
+                                    <div class="relative border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 rounded-xl p-4 text-center transition-all group-hover:border-blue-300 group-hover:shadow-md">
+                                        <div class="hidden peer-checked:flex absolute -top-2 -right-2 w-6 h-6 bg-blue-600 text-white rounded-full items-center justify-center shadow">
+                                            <i class="fas fa-check text-[10px]"></i>
+                                        </div>
+                                        <i class="fas fa-file-alt text-2xl text-gray-400 mb-2"></i>
+                                        <p class="text-sm font-medium text-gray-700">Default</p>
+                                        <p class="text-[11px] text-gray-400 mt-0.5">Plain, no styling</p>
+                                    </div>
+                                </label>
+                                @foreach($templates as $tpl)
+                                    <label class="cursor-pointer group">
+                                        <input type="radio" name="invoice_template_id" value="{{ $tpl->id }}" class="hidden peer template-radio">
+                                        <div class="relative border-2 border-gray-200 peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 rounded-xl p-4 text-center transition-all group-hover:border-blue-300 group-hover:shadow-md">
+                                            <div class="hidden peer-checked:flex absolute -top-2 -right-2 w-6 h-6 bg-blue-600 text-white rounded-full items-center justify-center shadow z-10">
+                                                <i class="fas fa-check text-[10px]"></i>
+                                            </div>
+                                            <div class="w-full h-16 rounded-lg mb-2 overflow-hidden flex">
+                                                <div class="flex-1" style="background: {{ $tpl->config['primary_color'] ?? '#3B82F6' }};"></div>
+                                                <div class="flex-1" style="background: {{ $tpl->config['secondary_color'] ?? ($tpl->config['primary_color'] ?? '#93C5FD') }}80;"></div>
+                                            </div>
+                                            <p class="text-sm font-medium text-gray-800 truncate">{{ $tpl->name }}</p>
+                                            <button type="button"
+                                                    onclick="event.preventDefault(); event.stopPropagation(); openTemplatePreview('{{ route('templates.preview.embed', $tpl->id) }}', '{{ $tpl->name }}');"
+                                                    class="mt-2 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                                <i class="fas fa-eye mr-1"></i>Preview
+                                            </button>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
                     @endif
 
                     {{-- CUSTOMER DETAILS --}}
                     <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-lg font-semibold text-gray-800">Customer Details</h3>
-                            <a href="{{ route('customers.create') }}" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                                <i class="fas fa-user-plus mr-1"></i> Add New Customer
-                            </a>
                         </div>
 
                         <div class="grid grid-cols-2 gap-6 mb-6">
                             <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Customer</label>
                                 <select id="customerSelect" name="customer_id" class="w-full"></select>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Search for an existing customer, or choose <span class="font-medium">"+ Add New Customer"</span> to enter their details.
+                                </p>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-6">
+                        <div id="customerDetailsFields" class="grid grid-cols-2 gap-6 hidden">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                                <input type="text" id="customer_first_name" name="first_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_first_name" name="first_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                                <input type="text" id="customer_last_name" name="last_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_last_name" name="last_name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
@@ -94,27 +112,27 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                                <input type="email" id="customer_email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="email" id="customer_email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                                <input type="text" id="customer_address" name="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_address" name="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">City *</label>
-                                <input type="text" id="customer_city" name="city" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_city" name="city" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">State *</label>
-                                <input type="text" id="customer_state" name="state" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_state" name="state" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Zip Code *</label>
-                                <input type="text" id="customer_postal_code" name="postal_code" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                                <input type="text" id="customer_postal_code" name="postal_code" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600">
                             </div>
 
                             <input type="hidden" name="country" value="US">
@@ -154,7 +172,6 @@
                         </div>
                     </div>
 
-                    {{-- RUSH DELIVERY ENABLE (SIMPLE CHECKBOX) --}}
                     {{-- RUSH DELIVERY ENABLE --}}
                     @if($globalSettings->hasRushDelivery())
                         <div class="bg-yellow-50 border border-yellow-300 rounded-2xl shadow-sm p-6">
@@ -261,11 +278,86 @@
                     {{-- ACTION BUTTONS --}}
                     <div class="flex justify-end space-x-4">
                         <a href="{{ route('invoices.index') }}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Cancel</a>
+                        <button type="button" id="previewInvoiceBtn" class="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50">
+                            <i class="fas fa-eye mr-2"></i>Preview
+                        </button>
                         <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Create Invoice</button>
                     </div>
                 </form>
             </div>
         </main>
+    </div>
+
+    {{-- INVOICE PREVIEW MODAL --}}
+    <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="previewModalBackdrop" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
+
+        <div id="previewModalPanel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-2 transition-all duration-200">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-800">Invoice Preview</h3>
+                        <p class="text-xs text-gray-400">This is a live preview — nothing has been saved yet</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="printPreviewBtn" title="Print" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-print text-sm"></i>
+                    </button>
+                    <button type="button" id="refreshPreviewBtn" title="Refresh preview" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
+                        <i class="fas fa-rotate text-sm"></i>
+                    </button>
+                    <button type="button" id="closePreviewModal" title="Close" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 flex items-center justify-center transition">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 relative bg-gray-100">
+                <div id="previewLoading" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-3">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-blue-500"></i>
+                    <p class="text-sm">Generating your invoice preview&hellip;</p>
+                </div>
+                <div id="previewError" class="absolute inset-0 hidden flex-col items-center justify-center text-center gap-3 px-8">
+                    <i class="fas fa-triangle-exclamation text-3xl text-red-400"></i>
+                    <p class="text-sm text-red-500" id="previewErrorText">Could not generate preview. Please check the form and try again.</p>
+                    <button type="button" id="retryPreviewBtn" class="mt-1 px-4 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100">Try again</button>
+                </div>
+                <iframe id="previewFrame" class="w-full h-full hidden bg-white" sandbox="allow-same-origin"></iframe>
+            </div>
+        </div>
+    </div>
+
+    {{-- TEMPLATE PREVIEW MODAL --}}
+    <div id="templatePreviewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div id="templatePreviewBackdrop" class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm opacity-0 transition-opacity duration-200"></div>
+
+        <div id="templatePreviewPanel" class="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden opacity-0 scale-95 translate-y-2 transition-all duration-200">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-800" id="templatePreviewTitle">Template Preview</h3>
+                        <p class="text-xs text-gray-400">Sample data shown &middot; select this template from the card behind this window</p>
+                    </div>
+                </div>
+                <button type="button" id="closeTemplatePreviewModal" title="Close" class="w-9 h-9 rounded-lg border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 flex items-center justify-center transition">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="flex-1 relative bg-gray-100">
+                <div id="templatePreviewLoading" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-3">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-purple-500"></i>
+                    <p class="text-sm">Loading template&hellip;</p>
+                </div>
+                <iframe id="templatePreviewFrame" class="w-full h-full hidden bg-white"></iframe>
+            </div>
+        </div>
     </div>
 
     {{-- JS + Select2 + SortableJS --}}
@@ -285,32 +377,56 @@
         $(document).ready(function () {
 
             // CUSTOMER Select2
+            const NEW_CUSTOMER_OPTION = {
+                id: 'new',
+                text: '+ Add New Customer'
+            };
+
+            const $customerFields = $('#customerDetailsFields');
+            const $requiredCustomerInputs = $('#customer_first_name, #customer_last_name, #customer_email, #customer_address, #customer_city, #customer_state, #customer_postal_code');
+
+            function showCustomerFields(editable){
+                $customerFields.removeClass('hidden');
+                $requiredCustomerInputs.prop('required', true);
+                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_address, #customer_city, #customer_state, #customer_postal_code')
+                    .prop('readonly', !editable);
+            }
+
+            function hideCustomerFields(){
+                $customerFields.addClass('hidden');
+                $requiredCustomerInputs.prop('required', false);
+            }
+
+            function clearCustomerFields(){
+                $('#customer_first_name, #customer_last_name, #customer_company_name, #customer_email, #customer_address, #customer_city, #customer_state, #customer_postal_code').val('');
+            }
+
             $('#customerSelect').select2({
-                placeholder: 'Search customer...',
+                placeholder: 'Search customer or add a new one...',
                 ajax: {
                     url: '{{ route("customers.fetch") }}',
                     dataType: 'json',
                     delay: 250,
                     data: function(params){ return {q: params.term}; },
                     processResults: function(response){
-                        if(response.success){
-                            return {
-                                results: response.data.map(c => ({
-                                    id: c.id,
-                                    text: c.text,
-                                    first_name: c.first_name,
-                                    last_name: c.last_name,
-                                    email: c.email,
-                                    address: c.address,
-                                    city: c.city,
-                                    company_name: c.company_name,
-                                    country: c.country,
-                                    postal_code: c.postal_code,
-                                    state: c.state
-                                }))
-                            };
-                        }
-                        return {results: []};
+                        const results = response.success
+                            ? response.data.map(c => ({
+                                id: c.id,
+                                text: c.text,
+                                first_name: c.first_name,
+                                last_name: c.last_name,
+                                email: c.email,
+                                address: c.address,
+                                city: c.city,
+                                company_name: c.company_name,
+                                country: c.country,
+                                postal_code: c.postal_code,
+                                state: c.state
+                            }))
+                            : [];
+
+                        // Always offer "+ Add New Customer" at the top of the list
+                        return { results: [NEW_CUSTOMER_OPTION, ...results] };
                     },
                     cache:true
                 }
@@ -318,6 +434,14 @@
 
             $('#customerSelect').on('select2:select', function(e){
                 const data = e.params.data;
+
+                if (data.id === 'new') {
+                    clearCustomerFields();
+                    showCustomerFields(true);
+                    $('#customer_first_name').trigger('focus');
+                    return;
+                }
+
                 $('#customer_first_name').val(data.first_name);
                 $('#customer_last_name').val(data.last_name);
                 $('#customer_company_name').val(data.company_name);
@@ -326,6 +450,9 @@
                 $('#customer_city').val(data.city);
                 $('#customer_state').val(data.state);
                 $('#customer_postal_code').val(data.postal_code);
+
+                // Existing customer picked — values are already set, no need to show the fields
+                hideCustomerFields();
             });
 
             // LINE ITEMS
@@ -456,6 +583,139 @@
                 `;
                 cfContainer.appendChild(row);
                 row.querySelector('.remove-cf').addEventListener('click', () => row.remove());
+            });
+
+            // ---- Shared modal open/close helpers (animated, Escape + backdrop dismiss, scroll lock) ----
+            let openModalId = null;
+
+            function openModal(modalId, backdropId, panelId) {
+                const modal = document.getElementById(modalId);
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+                requestAnimationFrame(() => {
+                    document.getElementById(backdropId).classList.remove('opacity-0');
+                    const panel = document.getElementById(panelId);
+                    panel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+                });
+                openModalId = modalId;
+            }
+
+            function closeModal(modalId, backdropId, panelId, onClosed) {
+                document.getElementById(backdropId).classList.add('opacity-0');
+                const panel = document.getElementById(panelId);
+                panel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+                setTimeout(() => {
+                    const modal = document.getElementById(modalId);
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    document.body.classList.remove('overflow-hidden');
+                    if (onClosed) onClosed();
+                }, 180);
+                openModalId = null;
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && openModalId) {
+                    document.getElementById(openModalId).querySelector('[id^="close"]')?.click();
+                }
+            });
+
+            // ---- INVOICE PREVIEW ----
+            const previewLoading = document.getElementById('previewLoading');
+            const previewError = document.getElementById('previewError');
+            const previewErrorText = document.getElementById('previewErrorText');
+            const previewFrame = document.getElementById('previewFrame');
+            const printPreviewBtn = document.getElementById('printPreviewBtn');
+
+            function setPreviewState(state) {
+                previewLoading.classList.toggle('hidden', state !== 'loading');
+                previewError.classList.toggle('hidden', state !== 'error');
+                previewError.classList.toggle('flex', state === 'error');
+                previewFrame.classList.toggle('hidden', state !== 'ready');
+                printPreviewBtn.disabled = state !== 'ready';
+            }
+
+            function loadInvoicePreview() {
+                const form = document.getElementById('invoiceForm');
+                if (!form.reportValidity()) return false;
+
+                setPreviewState('loading');
+
+                $.ajax({
+                    url: '{{ route("invoices.preview") }}',
+                    method: 'POST',
+                    data: $(form).serialize(),
+                    dataType: 'json'
+                }).done(function (response) {
+                    if (response.success) {
+                        previewFrame.srcdoc = response.html;
+                        setPreviewState('ready');
+                    } else {
+                        previewErrorText.textContent = 'Could not generate preview. Please check the form and try again.';
+                        setPreviewState('error');
+                    }
+                }).fail(function () {
+                    previewErrorText.textContent = 'Something went wrong while generating the preview. Please try again.';
+                    setPreviewState('error');
+                });
+
+                return true;
+            }
+
+            document.getElementById('previewInvoiceBtn').addEventListener('click', function () {
+                if (loadInvoicePreview()) {
+                    openModal('previewModal', 'previewModalBackdrop', 'previewModalPanel');
+                }
+            });
+
+            document.getElementById('refreshPreviewBtn').addEventListener('click', loadInvoicePreview);
+            document.getElementById('retryPreviewBtn').addEventListener('click', loadInvoicePreview);
+
+            printPreviewBtn.addEventListener('click', function () {
+                if (previewFrame.contentWindow) {
+                    previewFrame.contentWindow.focus();
+                    previewFrame.contentWindow.print();
+                }
+            });
+
+            document.getElementById('closePreviewModal').addEventListener('click', function () {
+                closeModal('previewModal', 'previewModalBackdrop', 'previewModalPanel', function () {
+                    previewFrame.src = '';
+                    previewFrame.srcdoc = '';
+                });
+            });
+
+            document.getElementById('previewModalBackdrop').addEventListener('click', function () {
+                document.getElementById('closePreviewModal').click();
+            });
+
+            // ---- TEMPLATE PREVIEW ----
+            const templatePreviewFrame = document.getElementById('templatePreviewFrame');
+            const templatePreviewLoading = document.getElementById('templatePreviewLoading');
+            const templatePreviewTitle = document.getElementById('templatePreviewTitle');
+
+            window.openTemplatePreview = function (url, name) {
+                templatePreviewTitle.textContent = name ? `Preview: ${name}` : 'Template Preview';
+                templatePreviewFrame.classList.add('hidden');
+                templatePreviewLoading.classList.remove('hidden');
+                templatePreviewFrame.src = url;
+                openModal('templatePreviewModal', 'templatePreviewBackdrop', 'templatePreviewPanel');
+            };
+
+            templatePreviewFrame.addEventListener('load', function () {
+                templatePreviewLoading.classList.add('hidden');
+                templatePreviewFrame.classList.remove('hidden');
+            });
+
+            document.getElementById('closeTemplatePreviewModal').addEventListener('click', function () {
+                closeModal('templatePreviewModal', 'templatePreviewBackdrop', 'templatePreviewPanel', function () {
+                    templatePreviewFrame.src = '';
+                });
+            });
+
+            document.getElementById('templatePreviewBackdrop').addEventListener('click', function () {
+                document.getElementById('closeTemplatePreviewModal').click();
             });
 
         });

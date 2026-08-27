@@ -135,16 +135,14 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-flag mr-1 text-blue-600"></i> Country
                     </label>
-                    <input type="text" name="country_name" value="US"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg
-                      focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                           placeholder="ZIP / Postal code" readonly>
+                    <select name="country" id="country"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white
+                       focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                        <option value="">Select country</option>
+                        @include('customers.partials.countries')
+                    </select>
                 </div>
             </div>
-
-            {{-- Hidden Country --}}
-            <input type="hidden" name="country" value="US">
-
 
             {{-- Buttons --}}
             <div class="mt-8 flex justify-end space-x-3">
@@ -159,6 +157,29 @@
             </div>
         </form>
     </div>
+
+    <style>
+        .select2-container--default .select2-selection--single { height:42px !important; border:1px solid #d1d5db !important; border-radius:0.5rem !important; display:flex; align-items:center; }
+        .select2-container .select2-selection--single .select2-selection__rendered { line-height:42px !important; padding-left:1rem !important; }
+        .select2-selection__arrow { top:8px !important; right:8px !important; }
+        .select2-container { width:100% !important; }
+        .select2-results__options { max-height:300px !important; }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.jQuery && jQuery.fn.select2) {
+                $('#country').select2({
+                    placeholder: 'Search country',
+                    allowClear: true
+                });
+            }
+        });
+    </script>
 
     <script>
         // Google Places Autocomplete

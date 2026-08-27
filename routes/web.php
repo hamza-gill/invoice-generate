@@ -162,6 +162,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::prefix('invoices')->name('invoices.')->group(function () {
         Route::get('/', [InvoiceController::class, 'index'])->name('index');
         Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+        Route::post('/preview', [InvoiceController::class, 'preview'])->name('preview');
         Route::post('/', [InvoiceController::class, 'store'])->name('store');
         Route::get('search', [InvoiceController::class, 'search'])->name('search');
         Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
@@ -222,6 +223,8 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::prefix('templates')->name('templates.')->group(function () {
         Route::get('/', [InvoiceTemplateController::class, 'index'])->name('index');
         Route::get('/{template}/preview', [InvoiceTemplateController::class, 'preview'])->name('preview');
+        Route::get('/{template}/preview-embed', [InvoiceTemplateController::class, 'previewEmbed'])
+            ->name('preview.embed');
         Route::post('/{template}/select', [InvoiceTemplateController::class, 'select'])->name('select');
         Route::post('/custom-css', [InvoiceTemplateController::class, 'customCss'])->name('customCss');
     });

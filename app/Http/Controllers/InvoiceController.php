@@ -6,7 +6,9 @@ use App\Http\Requests\Invoice\StoreInvoiceRequest;
 use App\Mail\SendInvoiceMail;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\InvoiceTemplate;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Services\InvoiceTemplateRenderer;
 use App\Services\MailConfigurationService;
@@ -50,6 +52,90 @@ class InvoiceController extends Controller
             ->orderBy('sort_order')
             ->get();
         return view('invoices.create', compact('customers', 'templates'));
+    }
+
+    /**
+     * Render a live preview of the invoice using unsaved form data,
+     * so the user can see the result before actually creating it.
+     */
+    public function preview(Request $request, InvoiceTemplateRenderer $renderer)
+    {
+        $this->authorize('create', Invoice::class);
+
+        $customer = new Customer([
+            'first_name'   => $request->input('first_name'),
+            'last_name'    => $request->input('last_name'),
+            'company_name' => $request->input('company_name'),
+            'email'        => $request->input('email'),
+            'address'      => $request->input('address'),
+            'city'         => $request->input('city'),
+            'state'        => $request->input('state'),
+            'postal_code'  => $request->input('postal_code'),
+            'country'      => 'USA',
+        ]);
+
+        $issueDate = $request->filled('issue_date') ? Carbon::parse($request->input('issue_date')) : now();
+        $dueDate   = $request->filled('due_date') ? Carbon::parse($request->input('due_date')) : $issueDate->copy()->addYear();
+
+        $invoice = new Invoice([
+            'invoice_number'      => $request->input('invoice_number') ?: 'PREVIEW',
+            'description'         => $request->input('description') ?? '',
+            'issue_date'          => $issueDate,
+            'due_date'            => $dueDate,
+            'note'                => $request->input('notes') ?? '',
+            'project_address'     => $request->input('project_address') ?? '',
+            'discount'            => $request->input('discount', 0),
+            'invoice_template_id' => $request->input('invoice_template_id') ?: null,
+            'status'              => 'sent',
+        ]);
+        $invoice->organization_id = auth()->user()->organization_id;
+        $invoice->setRelation('customer', $customer);
+
+        $lineItems = collect($request->input('line_items', []))->map(function ($item) {
+            $quantity  = (float) ($item['quantity'] ?? 1);
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $product   = !empty($item['product_id']) ? Product::find($item['product_id']) : null;
+
+            $invoiceItem = new InvoiceItem([
+                'activity'   => $item['description'] ?? ($product->name ?? ''),
+                'product_id' => $item['product_id'] ?? null,
+                'quantity'   => $quantity,
+                'amount'     => $unitPrice,
+                'total'      => $quantity * $unitPrice,
+            ]);
+
+            return $invoiceItem->setRelation('product', $product);
+        });
+
+        $invoice->setRelation('items', $lineItems);
+
+        if ($request->filled('invoice_template_id')) {
+            $invoice->setRelation('template', InvoiceTemplate::find($request->input('invoice_template_id')));
+        }
+
+        $settings = Setting::withoutGlobalScopes()
+            ->where('organization_id', auth()->user()->organization_id)
+            ->first();
+
+        $subtotal = $lineItems->sum(fn ($item) => $item->quantity * $item->amount);
+        $discount = (float) $request->input('discount', 0);
+        $taxRate  = ($settings->enable_tax ?? false) ? (($settings->tax_percentage ?? 0) / 100) : 0;
+
+        $invoice->subtotal  = $subtotal;
+        $invoice->taxAmount = $subtotal * $taxRate;
+        $invoice->total     = max(0, $subtotal + $invoice->taxAmount - $discount);
+        $invoice->amount    = $invoice->total;
+
+        $html = $renderer->render($invoice, $settings);
+
+        if ($html === '') {
+            $html = view('invoices.pdf', compact('invoice'))->render();
+        }
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+        ]);
     }
 
     /**

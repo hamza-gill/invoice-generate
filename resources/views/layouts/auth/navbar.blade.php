@@ -109,7 +109,12 @@
                 </div>
                 <div>
                     <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->first_name ?? 'John Doe' }}</p>
-                    <p class="text-xs text-gray-500">{{ Auth::user()->role ? Auth::user()->role : 'User' }}</p>
+                    @php($orgName = auth()->user()->organization?->name ?? '')
+                    @if($orgName)
+                        <p class="text-[11px] text-gray-500">{{ $orgName }}</p>
+                    @else
+                        <p class="text-xs text-gray-500 capitalize">{{ Auth::user()->role ? Auth::user()->role : 'User' }}</p>
+                    @endif
                 </div>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf

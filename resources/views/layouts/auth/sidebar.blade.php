@@ -1,16 +1,32 @@
 <aside class="w-56 bg-sidebar text-white flex flex-col h-screen sticky top-0">
     <!-- 🌐 Logo Section -->
+    @php
+        $companyName = $globalSettings->company_name ?? config('app.name');
+        $nameLen = mb_strlen($companyName);
+
+        // 4-tier dynamic font sizing based on name length
+        // (full sidebar width is now available to the name, so thresholds are more generous)
+        if ($nameLen <= 15) {
+            $nameFont = 'text-lg';      // short names — biggest
+        } elseif ($nameLen <= 25) {
+            $nameFont = 'text-base';    // medium
+        } elseif ($nameLen <= 40) {
+            $nameFont = 'text-sm';      // long
+        } else {
+            $nameFont = 'text-xs';      // very long — smallest
+        }
+    @endphp
     <div class="p-6 border-b border-gray-700">
-        <div class="flex items-center space-x-3">
+        <div class="flex flex-col items-center text-center space-y-2">
             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <i class="fas fa-exchange-alt text-white"></i>
             </div>
 
-            <div class="flex-1 min-w-0">
-                <h1 class="text-lg font-bold truncate">
-                    {{ $globalSettings->company_name ?? config('app.name') }}
+            <div class="w-full">
+                <h1 class="{{ $nameFont }} font-bold leading-snug line-clamp-2 break-words" title="{{ $companyName }}">
+                    {{ $companyName }}
                 </h1>
-                <p class="text-xs text-gray-400">Invoice Reconciliation</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">Invoice Reconciliation</p>
             </div>
         </div>
 
