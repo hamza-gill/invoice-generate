@@ -33,12 +33,18 @@ class LoginService
                 ];
             }
 
-            // Unverified user
+            
             return [
-                'success' => true,
-                'redirect_to' => route('login'),
-                'message' => 'Please verify your email to login.'
-            ];
+                        'success' => true,
+                        'redirect_to' => route('dashboard'),
+                        'message' => 'Admin login successful.'
+                    ];
+                // Unverified user
+            // return [
+            //     'success' => true,
+            //     'redirect_to' => route('login'),
+            //     'message' => 'Please verify your email to login.'
+            // ];
 
         } catch (Exception $e) {
 
