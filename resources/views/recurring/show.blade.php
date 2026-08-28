@@ -150,38 +150,32 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        @foreach($recurring->items as $item)
+                        @foreach($recurring->line_items ?? [] as $item)
                             <tr>
-                                <td class="py-4 text-gray-800">{{ $item->description ?? ($item->product->name ?? 'N/A') }}</td>
-                                <td class="py-4 text-center text-gray-600">{{ $item->quantity }}</td>
-                                <td class="py-4 text-right text-gray-600">{{ $globalSettings->base_currency ?? '$' }}{{ number_format($item->unit_price, 2) }}</td>
-                                <td class="py-4 text-right font-semibold text-gray-800">{{ $globalSettings->base_currency ?? '$' }}{{ number_format($item->quantity * $item->unit_price, 2) }}</td>
+                                <td class="py-4 text-gray-800">{{ $item['description'] ?? 'N/A' }}</td>
+                                <td class="py-4 text-center text-gray-600">{{ $item['quantity'] ?? 0 }}</td>
+                                <td class="py-4 text-right text-gray-600">{{ $globalSettings->base_currency ?? '$' }}{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
+                                <td class="py-4 text-right font-semibold text-gray-800">{{ $globalSettings->base_currency ?? '$' }}{{ number_format(($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0), 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
 
-                @php
-                    $subtotal = $recurring->items->sum(fn($i) => $i->quantity * $i->unit_price);
-                    $discount = $recurring->discount ?? 0;
-                    $total = max(0, $subtotal - $discount);
-                @endphp
-
                 <div class="flex justify-end mt-6 pt-6 border-t border-gray-200">
                     <div class="w-72">
                         <div class="flex justify-between py-2 text-gray-600">
                             <span>Subtotal</span>
-                            <span>{{ $globalSettings->base_currency ?? '$' }}{{ number_format($subtotal, 2) }}</span>
+                            <span>{{ $globalSettings->base_currency ?? '$' }}{{ number_format($subtotal ?? 0, 2) }}</span>
                         </div>
-                        @if($discount > 0)
+                        @if(($discount ?? 0) > 0)
                             <div class="flex justify-between py-2 text-red-500">
                                 <span>Discount</span>
-                                <span>-{{ $globalSettings->base_currency ?? '$' }}{{ number_format($discount, 2) }}</span>
+                                <span>-{{ $globalSettings->base_currency ?? '$' }}{{ number_format($discount ?? 0, 2) }}</span>
                             </div>
                         @endif
                         <div class="flex justify-between py-3 border-t-2 border-gray-800 text-xl font-bold">
                             <span>Total</span>
-                            <span>{{ $globalSettings->base_currency ?? '$' }}{{ number_format($total, 2) }}</span>
+                            <span>{{ $globalSettings->base_currency ?? '$' }}{{ number_format($total ?? 0, 2) }}</span>
                         </div>
                     </div>
                 </div>

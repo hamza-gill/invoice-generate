@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Estimate;
 use App\Models\EstimateItem;
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Models\Setting;
 use Carbon\Carbon;
 use App\Services\InvoiceTemplateRenderer;
@@ -32,11 +33,109 @@ class EstimateController extends Controller
         $estimateNumber = Estimate::generateEstimateNumber();
         return view('estimates.create', compact('customers', 'estimateNumber'));
     }
+    /**
+     * 2. Add this new method anywhere inside the EstimateController class
+     *    (placed here right after create(), to mirror InvoiceController::preview()).
+     */
+
+    /**
+     * Render a live preview of the estimate using unsaved form data,
+     * so the user can see the result before actually creating it.
+     */
+    public function preview(Request $request, InvoiceTemplateRenderer $renderer)
+    {
+        $customer = new Customer([
+            'first_name'   => $request->input('first_name'),
+            'last_name'    => $request->input('last_name'),
+            'company_name' => $request->input('company_name'),
+            'email'        => $request->input('email'),
+            'phone_number' => $request->input('phone_number'),
+            'address'      => $request->input('address'),
+            'city'         => $request->input('city'),
+            'state'        => $request->input('state'),
+            'postal_code'  => $request->input('postal_code'),
+            'country'      => $request->input('country', 'USA'),
+        ]);
+
+        $issueDate  = $request->filled('issue_date') ? Carbon::parse($request->input('issue_date')) : now();
+        $validUntil = $request->filled('valid_until') ? Carbon::parse($request->input('valid_until')) : null;
+
+        $estimate = new Estimate([
+            'estimate_number' => $request->input('estimate_number') ?: 'PREVIEW',
+            'description'     => $request->input('description') ?? '',
+            'issue_date'      => $issueDate,
+            'valid_until'     => $validUntil,
+            'notes'           => $request->input('notes') ?? '',
+            'project_address' => $request->input('project_address') ?? '',
+            'discount'        => $request->input('discount', 0),
+            'status'          => 'draft',
+        ]);
+        $estimate->organization_id = Auth::user()->organization_id ?? null;
+        $estimate->setRelation('customer', $customer);
+
+        $lineItems = collect($request->input('line_items', []))->map(function ($item) {
+            $quantity  = (float) ($item['quantity'] ?? 1);
+            $unitPrice = (float) ($item['unit_price'] ?? 0);
+            $product   = !empty($item['product_id']) ? Product::find($item['product_id']) : null;
+
+            $estimateItem = new EstimateItem([
+                'activity'    => $item['description'] ?? ($product->name ?? ''),
+                'description' => $item['description'] ?? ($product->name ?? ''),
+                'product_id'  => $item['product_id'] ?? null,
+                'quantity'    => $quantity,
+                'amount'      => $unitPrice,
+                'total'       => $quantity * $unitPrice,
+            ]);
+
+            return $estimateItem->setRelation('product', $product);
+        });
+
+        $estimate->setRelation('items', $lineItems);
+
+        $settings = Setting::withoutGlobalScopes()
+            ->where('organization_id', Auth::user()->organization_id)
+            ->first();
+
+        $subtotal = $lineItems->sum(fn ($item) => $item->quantity * $item->amount);
+        $discount = (float) $request->input('discount', 0);
+
+        $estimate->subtotal = $subtotal;
+        $estimate->total    = max(0, $subtotal - $discount);
+        $estimate->amount   = $estimate->total;
+
+        $html = $renderer->renderEstimate($estimate, $settings);
+
+        if ($html === '') {
+            $html = '<div style="font-family: sans-serif; padding: 3rem; color:#64748b; text-align:center;">'
+                . 'No estimate template is configured yet — this preview has nothing to render.'
+                . '</div>';
+        }
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+        ]);
+    }
+
+    /**
+     * 3. REPLACE your entire store() method with this. It now creates/updates the
+     *    customer from the posted fields (keyed on email) instead of requiring an
+     *    existing customer_id — matching InvoiceController::store() and supporting
+     *    the new "+ Add New Customer" dropdown option in the blade form.
+     */
 
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id' => 'required|exists:customers,id',
+            // customer_id is no longer required from the client — we resolve/create
+            // the customer ourselves below, the same way InvoiceController::store() does.
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'address' => 'required|string',
+            'city' => 'required|string',
+            'state' => 'required|string',
+            'postal_code' => 'required|string',
             'issue_date' => 'required|date',
             'valid_until' => 'nullable|date|after_or_equal:issue_date',
             'line_items' => 'required|array|min:1',
@@ -51,6 +150,24 @@ class EstimateController extends Controller
 
         DB::beginTransaction();
         try {
+            // Fetch or create the customer — mirrors InvoiceController::store().
+            // Works whether the dropdown had an existing customer selected (their
+            // fields were populated automatically) or "+ Add New Customer" was chosen.
+            $customer = Customer::updateOrCreate(
+                ['email' => $request->input('email')],
+                [
+                    'first_name'   => $request->input('first_name'),
+                    'last_name'    => $request->input('last_name'),
+                    'company_name' => $request->input('company_name'),
+                    'address'      => $request->input('address'),
+                    'city'         => $request->input('city'),
+                    'phone_number' => $request->input('phone_number'),
+                    'country'      => $request->input('country', 'USA'),
+                    'state'        => $request->input('state'),
+                    'postal_code'  => $request->input('postal_code'),
+                ]
+            );
+
             $lineItems = $request->input('line_items', []);
             $subtotal = collect($lineItems)->sum(fn($i) => $i['quantity'] * $i['unit_price']);
             $discount = floatval($request->input('discount', 0));
@@ -63,7 +180,7 @@ class EstimateController extends Controller
 
             $estimate = Estimate::create([
                 'user_id' => Auth::id(),
-                'customer_id' => $request->input('customer_id'),
+                'customer_id' => $customer->id,
                 'estimate_number' => $request->input('estimate_number') ?: Estimate::generateEstimateNumber(),
                 'description' => $request->input('description'),
                 'amount' => max(0, $subtotal - $discount),
@@ -97,7 +214,6 @@ class EstimateController extends Controller
                 ->withErrors(['error' => 'Failed to create estimate: ' . $e->getMessage()]);
         }
     }
-
     public function show(Estimate $estimate)
     {
         $estimate->load(['customer', 'items.product', 'convertedInvoice']);

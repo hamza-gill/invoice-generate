@@ -233,6 +233,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::prefix('recurring')->name('recurring.')->group(function () {
         Route::get('/', [RecurringInvoiceController::class, 'index'])->name('index');
         Route::get('/create', [RecurringInvoiceController::class, 'create'])->name('create');
+        Route::post('/preview', [RecurringInvoiceController::class, 'preview'])->name('preview');
         Route::post('/', [RecurringInvoiceController::class, 'store'])->name('store');
         Route::get('/{recurring}', [RecurringInvoiceController::class, 'show'])->name('show');
         Route::get('/{recurring}/edit', [RecurringInvoiceController::class, 'edit'])->name('edit');
@@ -247,6 +248,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::prefix('estimates')->name('estimates.')->group(function () {
         Route::get('/', [EstimateController::class, 'index'])->name('index');
         Route::get('/create', [EstimateController::class, 'create'])->name('create');
+        Route::post('/preview', [EstimateController::class, 'preview'])->name('preview');
         Route::post('/', [EstimateController::class, 'store'])->name('store');
         Route::get('/{estimate}', [EstimateController::class, 'show'])->name('show');
         Route::get('/{estimate}/edit', [EstimateController::class, 'edit'])->name('edit');
