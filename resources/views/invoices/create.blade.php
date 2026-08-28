@@ -174,12 +174,10 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-3">Issue Date *</label>
                                 <input type="date" name="issue_date" value="{{ old('issue_date', now()->format('Y-m-d')) }}" min="{{ now()->format('Y-m-d') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
                             </div>
-                            @if(!empty($globalSettings->enable_due_date) && $globalSettings->enable_due_date)
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">Due Date *</label>
-                                    <input type="date" name="due_date" value="{{ old('due_date', now()->addDays(7)->format('Y-m-d')) }}" min="{{ now()->format('Y-m-d') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
-                                </div>
-                            @endif
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Due Date *</label>
+                                <input type="date" name="due_date" value="{{ old('due_date', now()->addDays(7)->format('Y-m-d')) }}" min="{{ now()->format('Y-m-d') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" required>
+                            </div>
                         </div>
                     </div>
 

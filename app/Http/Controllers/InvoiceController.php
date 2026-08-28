@@ -75,7 +75,7 @@ class InvoiceController extends Controller
         ]);
 
         $issueDate = $request->filled('issue_date') ? Carbon::parse($request->input('issue_date')) : now();
-        $dueDate   = $request->filled('due_date') ? Carbon::parse($request->input('due_date')) : $issueDate->copy()->addYear();
+        $dueDate   = $request->filled('due_date') ? Carbon::parse($request->input('due_date')) : $issueDate->copy()->addDays(30);
 
         $invoice = new Invoice([
             'invoice_number'      => $request->input('invoice_number') ?: 'PREVIEW',
@@ -172,9 +172,11 @@ class InvoiceController extends Controller
             // Generate or use provided invoice number
             $invoiceNumber = $request->input('invoice_number') ?: Invoice::consumeNextInvoiceNumber();
 
-            // Calculate due date — 1 year after issue date
+            // Calculate due date — use submitted value, default to 30 days after issue date
             $issueDate = Carbon::parse($request->input('issue_date'));
-            $dueDate = $issueDate->copy()->addYear();
+            $dueDate = $request->filled('due_date')
+                ? Carbon::parse($request->input('due_date'))
+                : $issueDate->copy()->addDays(30);
 
             $customFields = $request->input('custom_fields')
                 ? array_values(array_filter($request->input('custom_fields'), fn($f) => !empty($f['label'])))
@@ -391,7 +393,9 @@ class InvoiceController extends Controller
 
             // ✅ Recalculate dates
             $issueDate = Carbon::parse($request->input('issue_date'));
-            $dueDate = $issueDate->copy()->addYear();
+            $dueDate = $request->filled('due_date')
+                ? Carbon::parse($request->input('due_date'))
+                : $invoice->due_date ?? $issueDate->copy()->addDays(30);
 
             // ✅ Update main invoice info
             $invoice->update([

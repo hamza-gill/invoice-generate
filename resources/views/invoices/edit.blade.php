@@ -149,16 +149,15 @@
                                        required>
                             </div>
 
-                            @if(!empty($globalSettings->enable_due_date))
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">Due Date *</label>
-                                    <input type="date"
-                                           name="due_date"
-                                           value="{{ old('due_date', \Carbon\Carbon::parse($invoice->due_date)->format('Y-m-d')) }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-                                           required>
-                                </div>
-                            @endif
+                            {{-- Due Date --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Due Date *</label>
+                                <input type="date"
+                                       name="due_date"
+                                       value="{{ old('due_date', \Carbon\Carbon::parse($invoice->due_date)->format('Y-m-d')) }}"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                                       required>
+                            </div>
                         </div>
                     </div>
 

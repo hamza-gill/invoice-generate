@@ -96,10 +96,8 @@
                         <span class="text-gray-500">Issue Date:</span>
                         <span class="font-semibold">{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M d, Y') }}</span>
 
-                        @if(!empty($globalSettings->enable_due_date) && $globalSettings->enable_due_date)
-                            <span class="text-gray-500">Due Date:</span>
-                            <span class="font-semibold">{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</span>
-                        @endif
+                        <span class="text-gray-500">Due Date:</span>
+                        <span class="font-semibold">{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</span>
 
                         <span class="text-gray-500">Status:</span>
                         <span>

@@ -177,12 +177,10 @@
                             <td><strong>Issue Date:</strong></td>
                             <td>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('M d, Y') }}</td>
                         </tr>
-                        @if(!empty($globalSettings->enable_due_date) && $globalSettings->enable_due_date)
-                            <tr>
-                                <td><strong>Due Date:</strong></td>
-                                <td>{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</td>
-                            </tr>
-                        @endif
+                        <tr>
+                            <td><strong>Due Date:</strong></td>
+                            <td>{{ \Carbon\Carbon::parse($invoice->due_date)->format('M d, Y') }}</td>
+                        </tr>
                         <tr>
                             <td><strong>Status:</strong></td>
                             <td>
