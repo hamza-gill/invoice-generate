@@ -42,15 +42,6 @@
             <span class="font-medium">Dashboard</span>
         </a>
 
-        @if(auth()->user()->isAdmin() || auth()->user()->isOrganizationOwner())
-            <a href="{{ route('subscription.index') }}"
-               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
-                      {{ request()->routeIs('subscription.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
-                <i class="fas fa-crown w-5"></i>
-                <span>Subscription</span>
-            </a>
-        @endif
-
         <!-- Invoices - Admin, Developer, Manager, Employee -->
         @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager', 'employee']))
             <a href="{{ route('invoices.index') }}"
@@ -143,6 +134,16 @@
                       {{ request()->routeIs('settings.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
                 <i class="fas fa-cog w-5"></i>
                 <span>Settings</span>
+            </a>
+        @endif
+
+        <!-- Subscription - Admin/Organization owner only -->
+        @if(auth()->user()->isAdmin() || auth()->user()->isOrganizationOwner())
+            <a href="{{ route('subscription.index') }}"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('subscription.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+                <i class="fas fa-crown w-5"></i>
+                <span>Subscription</span>
             </a>
         @endif
     </nav>
