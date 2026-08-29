@@ -1,6 +1,6 @@
 <footer class="border-t border-gray-200/60 py-12">
     <div class="mx-auto max-w-7xl px-6">
-        <div class="grid gap-8 md:grid-cols-4">
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
             <div>
                 <div class="flex items-center gap-2">
                     <div class="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary text-white">
@@ -17,6 +17,17 @@
                     <li><a href="{{ route('pricing') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Pricing</a></li>
                     <li><a href="{{ route('integrations') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Integrations</a></li>
                     <li><a href="{{ route('changelog') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Changelog</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="text-sm font-semibold">Free tools</div>
+                <ul class="mt-3 space-y-2">
+                    <li><a href="{{ route('tools.free-invoice-generator') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Invoice generator</a></li>
+                    <li><a href="{{ route('tools.invoice-template') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Invoice template</a></li>
+                    <li><a href="{{ route('tools.invoice-number-generator') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Invoice number generator</a></li>
+                    <li><a href="{{ route('tools.estimate-generator') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Estimate generator</a></li>
+                    <li><a href="{{ route('tools.late-fee-calculator') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Late fee calculator</a></li>
+                    <li><a href="{{ route('tools.invoice-calculator') }}" class="text-sm text-gray-500 transition hover:text-gray-900">Invoice calculator</a></li>
                 </ul>
             </div>
             <div>

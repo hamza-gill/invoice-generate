@@ -19,6 +19,7 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\UserController;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +64,20 @@ Route::get('/invoice-automation', fn () => app(LandingController::class)->seo('i
 Route::get('/estimate-invoice-software', fn () => app(LandingController::class)->seo('estimate-invoice-software'))->name('seo.estimate-invoice-software');
 Route::get('/stripe-invoicing', fn () => app(LandingController::class)->seo('stripe-invoicing'))->name('seo.stripe-invoicing');
 Route::get('/small-business-invoicing', fn () => app(LandingController::class)->seo('small-business-invoicing'))->name('seo.small-business-invoicing');
+Route::get('/invoicing-software-for-freelancers', fn () => app(LandingController::class)->seo('invoicing-software-for-freelancers'))->name('seo.invoicing-software-for-freelancers');
+Route::get('/invoicing-software-for-agencies', fn () => app(LandingController::class)->seo('invoicing-software-for-agencies'))->name('seo.invoicing-software-for-agencies');
+Route::get('/invoicing-software-for-consultants', fn () => app(LandingController::class)->seo('invoicing-software-for-consultants'))->name('seo.invoicing-software-for-consultants');
+Route::get('/invoicing-software-for-contractors', fn () => app(LandingController::class)->seo('invoicing-software-for-contractors'))->name('seo.invoicing-software-for-contractors');
+Route::get('/invoicing-software-for-small-businesses', fn () => app(LandingController::class)->seo('invoicing-software-for-small-businesses'))->name('seo.invoicing-software-for-small-businesses');
+Route::get('/invoicing-software-for-startups', fn () => app(LandingController::class)->seo('invoicing-software-for-startups'))->name('seo.invoicing-software-for-startups');
+
+// Free SEO tools
+Route::get('/tools/free-invoice-generator', [ToolsController::class, 'freeInvoiceGenerator'])->name('tools.free-invoice-generator');
+Route::get('/tools/invoice-template', [ToolsController::class, 'invoiceTemplate'])->name('tools.invoice-template');
+Route::get('/tools/invoice-number-generator', [ToolsController::class, 'invoiceNumberGenerator'])->name('tools.invoice-number-generator');
+Route::get('/tools/estimate-generator', [ToolsController::class, 'estimateGenerator'])->name('tools.estimate-generator');
+Route::get('/tools/late-fee-calculator', [ToolsController::class, 'lateFeeCalculator'])->name('tools.late-fee-calculator');
+Route::get('/tools/invoice-calculator', [ToolsController::class, 'invoiceCalculator'])->name('tools.invoice-calculator');
 
 Route::get('/robots.txt', function () {
     $rules = implode("\n", [
@@ -114,6 +129,19 @@ Route::get('/sitemap.xml', function () {
         ['loc' => '/estimate-invoice-software', 'freq' => 'monthly', 'priority' => '0.8'],
         ['loc' => '/stripe-invoicing', 'freq' => 'monthly', 'priority' => '0.8'],
         ['loc' => '/small-business-invoicing', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-freelancers', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-agencies', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-consultants', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-contractors', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-small-businesses', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoicing-software-for-startups', 'freq' => 'monthly', 'priority' => '0.8'],
+        // Free SEO tools
+        ['loc' => '/tools/free-invoice-generator', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/tools/invoice-template', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/tools/invoice-number-generator', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/tools/estimate-generator', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/tools/late-fee-calculator', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/tools/invoice-calculator', 'freq' => 'monthly', 'priority' => '0.8'],
     ];
 
     return response()
