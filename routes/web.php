@@ -45,6 +45,25 @@ Route::get('/api', fn () => view('landing.api'))->name('api');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+/*
+|--------------------------------------------------------------------------
+| SEO Landing Pages
+|--------------------------------------------------------------------------
+| Dedicated keyword-targeting pages. Each is built from shared section
+| partials and a per-page content config (config/seo_pages.php).
+*/
+
+Route::get('/invoicing-software', fn () => app(LandingController::class)->seo('invoicing-software'))->name('seo.invoicing-software');
+Route::get('/online-invoice-software', fn () => app(LandingController::class)->seo('online-invoice-software'))->name('seo.online-invoice-software');
+Route::get('/invoice-management-software', fn () => app(LandingController::class)->seo('invoice-management-software'))->name('seo.invoice-management-software');
+Route::get('/invoice-generator', fn () => app(LandingController::class)->seo('invoice-generator'))->name('seo.invoice-generator');
+Route::get('/billing-software', fn () => app(LandingController::class)->seo('billing-software'))->name('seo.billing-software');
+Route::get('/recurring-invoicing', fn () => app(LandingController::class)->seo('recurring-invoicing'))->name('seo.recurring-invoicing');
+Route::get('/invoice-automation', fn () => app(LandingController::class)->seo('invoice-automation'))->name('seo.invoice-automation');
+Route::get('/estimate-invoice-software', fn () => app(LandingController::class)->seo('estimate-invoice-software'))->name('seo.estimate-invoice-software');
+Route::get('/stripe-invoicing', fn () => app(LandingController::class)->seo('stripe-invoicing'))->name('seo.stripe-invoicing');
+Route::get('/small-business-invoicing', fn () => app(LandingController::class)->seo('small-business-invoicing'))->name('seo.small-business-invoicing');
+
 Route::get('/robots.txt', function () {
     $rules = implode("\n", [
         'User-agent: *',
@@ -84,6 +103,17 @@ Route::get('/sitemap.xml', function () {
         ['loc' => '/contact', 'freq' => 'monthly', 'priority' => '0.6'],
         ['loc' => '/terms', 'freq' => 'yearly', 'priority' => '0.3'],
         ['loc' => '/privacy', 'freq' => 'yearly', 'priority' => '0.3'],
+        // SEO landing pages
+        ['loc' => '/invoicing-software', 'freq' => 'monthly', 'priority' => '0.9'],
+        ['loc' => '/online-invoice-software', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoice-management-software', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoice-generator', 'freq' => 'monthly', 'priority' => '0.9'],
+        ['loc' => '/billing-software', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/recurring-invoicing', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/invoice-automation', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/estimate-invoice-software', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/stripe-invoicing', 'freq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => '/small-business-invoicing', 'freq' => 'monthly', 'priority' => '0.8'],
     ];
 
     return response()

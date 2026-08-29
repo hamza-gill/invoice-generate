@@ -1,6 +1,6 @@
 @extends('layouts.marketing')
 
-@section('title', 'Inveqi — Invoicing, Recurring Billing & Estimates Software')
+@section('title', 'Online Invoicing Software for Small Businesses & Teams - Inveqi')
 @section('meta_description', 'Create professional invoices online for free with Inveqi. Drag-and-drop invoice builder, recurring billing, estimates & quotes, 10+ templates, and Stripe payments. Start your 14-day free trial.')
 @section('meta_keywords', 'invoice software, free invoice generator, online invoicing, create invoice online, invoice maker, invoice templates, recurring invoices, estimates and quotes, billing software, invoice management, invoice builder, small business invoicing, Stripe invoicing, PDF invoices, payment reminders, invoice app, invoicing for freelancers')
 @section('og_title', 'Inveqi — Free Invoicing Software')
@@ -16,8 +16,7 @@
     "operatingSystem": "Web",
     "url": "{{ url('/') }}",
     "description": "Free invoice management software with recurring billing, estimates and quotes, professional templates, and Stripe payments.",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free Starter plan. Paid plans available." },
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "ratingCount": "128" }
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free Starter plan. Paid plans available." }
 }
 </script>
 @endpush
@@ -79,18 +78,18 @@
                     New · Multi-tenant SaaS Platform
                 </div>
                 <h1 class="mt-6 text-5xl font-bold leading-tight tracking-tight md:text-6xl">
-                    Invoice management
-                    <span class="block text-gradient">built for every business</span>
+                    Online Invoicing Software for
+                    <span class="block text-gradient">Small Businesses &amp; Teams</span>
                 </h1>
                 <p class="mt-6 max-w-xl text-lg text-gray-500">
-                    Create invoices, collect payments via Stripe, and manage customers and products — all in your own secure workspace. Start free for 14 days.
+                    Create professional invoices, automate recurring billing, collect payments with Stripe, manage estimates, and track your revenue — all from one simple workspace.
                 </p>
                 <div class="mt-8 flex flex-wrap gap-3">
                     <a href="{{ route('register') }}" class="group inline-flex items-center gradient-primary text-white px-6 py-3 rounded-lg font-medium shadow-glow transition hover:opacity-95">
-                        Start Free Trial <i class="fas fa-arrow-right ml-2 text-sm transition group-hover:translate-x-1"></i>
+                        Start Free — 14 Days <i class="fas fa-arrow-right ml-2 text-sm transition group-hover:translate-x-1"></i>
                     </a>
-                    <a href="#pricing" class="inline-flex items-center border border-blue-500/20 px-6 py-3 rounded-lg font-medium hover:bg-blue-500/5 transition">
-                        View Pricing
+                    <a href="#how-it-works" class="inline-flex items-center border border-blue-500/20 px-6 py-3 rounded-lg font-medium hover:bg-blue-500/5 transition">
+                        See How It Works
                     </a>
                 </div>
                 <div class="mt-8 flex items-center gap-6 text-sm text-gray-500">
@@ -123,9 +122,9 @@
         </div>
         {{-- Logos strip --}}
         <div class="mt-20">
-            <p class="text-center text-xs uppercase tracking-widest text-gray-400">Trusted by 10,000+ teams worldwide</p>
+            <p class="text-center text-xs uppercase tracking-widest text-gray-400">Used by businesses on Inveqi</p>
             <div class="mt-6 grid grid-cols-2 items-center gap-8 opacity-60 sm:grid-cols-3 md:grid-cols-6">
-                @foreach(['Acme Corp', 'Northwind', 'Lumen', 'Globex', 'Initech', 'Vertex'] as $logo)
+                @foreach($companies as $logo)
                     <div class="text-center text-sm font-semibold tracking-tight text-gray-400">{{ $logo }}</div>
                 @endforeach
             </div>
@@ -134,6 +133,36 @@
 </section>
 
 {{-- Features --}}
+<section id="how-it-works" class="border-t border-gray-200/60 py-24">
+        <div class="mx-auto max-w-7xl px-6">
+            <div class="mx-auto max-w-2xl text-center">
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">How It Works</p>
+                <h2 class="mt-3 text-4xl font-bold tracking-tight">Get paid in three simple steps</h2>
+                <p class="mt-4 text-gray-500">Go from first invoice to payment received without leaving your workspace.</p>
+            </div>
+            <div class="mt-16 grid gap-6 md:grid-cols-3">
+                @php
+                    $steps = [
+                        ['icon' => 'fa-file-invoice', 'step' => '01', 'title' => 'Create & send', 'desc' => 'Pick a template, add your line items, and send a polished PDF invoice to your customer in minutes.'],
+                        ['icon' => 'fa-bolt', 'step' => '02', 'title' => 'Automate billing', 'desc' => 'Turn invoices into recurring billing, send payment reminders, and convert approved estimates with one click.'],
+                        ['icon' => 'fa-credit-card', 'step' => '03', 'title' => 'Get paid with Stripe', 'desc' => 'Let customers pay online by card with Stripe and watch your revenue and analytics update in real time.'],
+                    ];
+                @endphp
+                @foreach($steps as $s)
+                <div class="feature-card group relative rounded-2xl border border-gray-200 bg-white p-6 transition hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-card">
+                    <div class="feature-icon flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 transition">
+                        <i class="fas {{ $s['icon'] }}"></i>
+                    </div>
+                    <span class="mt-5 block text-xs font-bold tracking-widest text-blue-500/70">STEP {{ $s['step'] }}</span>
+                    <h3 class="mt-1 text-lg font-semibold">{{ $s['title'] }}</h3>
+                    <p class="mt-2 text-sm text-gray-500">{{ $s['desc'] }}</p>
+                    <div class="bottom-glow absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent opacity-0 transition"></div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
 <section id="features" class="border-t border-gray-200/60 py-24">
     <div class="mx-auto max-w-7xl px-6">
         <div class="mx-auto max-w-2xl text-center">
@@ -366,42 +395,45 @@
 {{-- Stats --}}
 <section class="border-t border-gray-200/60 py-20">
     <div class="mx-auto grid max-w-7xl gap-8 px-6 md:grid-cols-4">
-        @foreach([['1k+', 'Active businesses'], ['$50M+', 'Invoiced annually'], ['99.9%', 'Uptime SLA'], ['4.8/5', 'Customer rating']] as $s)
+        @foreach($stats as $s)
         <div class="text-center">
-            <div class="text-gradient text-4xl font-bold">{{ $s[0] }}</div>
-            <div class="mt-2 text-sm text-gray-500">{{ $s[1] }}</div>
+            <div class="text-gradient text-4xl font-bold">{{ $s['value'] }}</div>
+            <div class="mt-2 text-sm text-gray-500">{{ $s['label'] }}</div>
         </div>
         @endforeach
     </div>
 </section>
 
-{{-- Testimonials --}}
+{{-- Customers --}}
 <section class="border-t border-gray-200/60 py-24">
     <div class="mx-auto max-w-7xl px-6">
         <div class="mx-auto max-w-2xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">Loved by teams</p>
-            <h2 class="mt-3 text-4xl font-bold tracking-tight">What our customers say</h2>
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">Our customers</p>
+            <h2 class="mt-3 text-4xl font-bold tracking-tight">Businesses that invoice with Inveqi</h2>
         </div>
         <div class="mt-16 grid gap-6 md:grid-cols-3">
-            @foreach([
-                ['name' => 'Sarah Chen', 'role' => 'CFO, Lumen Inc', 'quote' => 'Inveqi cut our invoicing time by 70%. The Stripe integration just works.'],
-                ['name' => 'Marcus Lee', 'role' => 'Founder, Northwind', 'quote' => 'Finally a tool that looks great and gets out of the way. My team adopted it in a day.'],
-                ['name' => 'Priya Nair', 'role' => 'Ops Lead, Acme', 'quote' => 'The dashboards are stunning and the automations saved us hours every week.'],
-            ] as $t)
+            @foreach($testimonials as $i => $t)
+            @php
+                $quotes = [
+                    'We use Inveqi to send professional invoices, automate recurring billing and collect payments with Stripe.',
+                    'Inveqi handles our estimates, recurring invoicing and online payments all in one place.',
+                    'We manage customers, products and invoices on Inveqi and collect payments online with Stripe.',
+                ];
+            @endphp
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
                 <div class="flex gap-0.5 text-blue-500">
-                    @for($i = 0; $i < 5; $i++)
+                    @for($j = 0; $j < 5; $j++)
                     <i class="fas fa-star text-sm"></i>
                     @endfor
                 </div>
-                <p class="mt-4 text-sm leading-relaxed text-gray-900">"{{ $t['quote'] }}"</p>
+                <p class="mt-4 text-sm leading-relaxed text-gray-900">"{{ $quotes[$i % count($quotes)] }}"</p>
                 <div class="mt-6 flex items-center gap-3">
                     <div class="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-sm font-semibold text-white">
-                        {{ collect(explode(' ', $t['name']))->map(fn($n) => $n[0])->join('') }}
+                        {{ $t['initials'] }}
                     </div>
                     <div>
                         <div class="text-sm font-semibold">{{ $t['name'] }}</div>
-                        <div class="text-xs text-gray-500">{{ $t['role'] }}</div>
+                        <div class="text-xs text-gray-500">{{ $t['company'] }}</div>
                     </div>
                 </div>
             </div>
@@ -417,43 +449,34 @@
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">Pricing</p>
             <h2 class="mt-3 text-4xl font-bold tracking-tight">Simple pricing</h2>
             <p class="mt-4 text-gray-500">Choose a plan that fits your business. All plans include a 14-day free trial.</p>
-            <div class="mt-8 inline-flex items-center rounded-full border border-gray-200 bg-white p-1 text-sm">
-                <button id="billingMonthly" class="rounded-full px-4 py-1.5 transition gradient-primary text-white shadow-soft">Monthly</button>
-                <button id="billingYearly" class="rounded-full px-4 py-1.5 transition text-gray-500">Yearly <span class="ml-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">-20%</span></button>
-            </div>
         </div>
         <div class="mt-16 grid gap-6 lg:grid-cols-3">
-            @php
-                $plans = [
-                    ['name' => 'Starter', 'monthly' => 0, 'yearly' => 0, 'desc' => 'Perfect for freelancers and small businesses getting started.', 'features' => ['Up to 5 invoices/month', '1 user', 'PDF export', 'Email invoices'], 'popular' => false],
-                    ['name' => 'Professional', 'monthly' => 30, 'yearly' => 24, 'desc' => 'For growing businesses that need payment collection.', 'features' => ['Unlimited invoices', '5 users', 'Stripe payments', 'Reports & analytics', 'Webhook integrations'], 'popular' => true],
-                    ['name' => 'Business', 'monthly' => 80, 'yearly' => 64, 'desc' => 'Advanced features for teams with high volume invoicing.', 'features' => ['Unlimited everything', '25 users', 'Priority support', 'Custom branding', 'API access'], 'popular' => false],
-                ];
-            @endphp
             @foreach($plans as $p)
-            <div class="relative rounded-2xl border bg-white p-8 transition {{ $p['popular'] ? 'border-blue-500 shadow-glow lg:-translate-y-4' : 'border-gray-200 hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-card' }}">
-                @if($p['popular'])
+            <div class="relative rounded-2xl border bg-white p-8 transition {{ $p->is_featured ? 'border-blue-500 shadow-glow lg:-translate-y-4' : 'border-gray-200 hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-card' }}">
+                @if($p->is_featured)
                 <div class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full gradient-primary px-4 py-1 text-xs font-semibold text-white shadow-soft">MOST POPULAR</div>
                 @endif
-                <h3 class="text-xl font-semibold">{{ $p['name'] }}</h3>
+                <h3 class="text-xl font-semibold">{{ $p->name }}</h3>
                 <div class="mt-4 flex items-baseline gap-1">
-                    <span class="price-monthly text-5xl font-bold tracking-tight">${{ $p['monthly'] }}</span>
-                    <span class="price-yearly text-5xl font-bold tracking-tight hidden">${{ $p['yearly'] }}</span>
-                    <span class="text-sm text-gray-500">/month</span>
+                    <span class="text-5xl font-bold tracking-tight">${{ number_format($p->price, 0) }}</span>
+                    <span class="text-sm text-gray-500">/{{ $p->interval }}</span>
                 </div>
-                @if($p['monthly'] > 0)
-                <div class="price-yearly hidden mt-1 text-xs text-gray-500">Billed ${{ $p['yearly'] * 12 }}/year</div>
-                @endif
-                <p class="mt-3 text-sm text-gray-500">{{ $p['desc'] }}</p>
+                <p class="mt-3 text-sm text-gray-500">{{ $p->description }}</p>
                 <ul class="mt-6 space-y-3">
-                    @foreach($p['features'] as $f)
+                    @foreach($p->features ?? [] as $f)
                     <li class="flex items-start gap-3 text-sm">
                         <i class="fas fa-check mt-0.5 text-blue-500 text-xs"></i>
                         <span>{{ $f }}</span>
                     </li>
                     @endforeach
+                    @if($p->payment_gateway_enabled)
+                    <li class="flex items-start gap-3 text-sm">
+                        <i class="fas fa-check mt-0.5 text-blue-500 text-xs"></i>
+                        <span>Stripe payment gateway</span>
+                    </li>
+                    @endif
                 </ul>
-                <a href="{{ route('register') }}" class="mt-8 block w-full text-center px-4 py-2.5 rounded-lg font-medium transition {{ $p['popular'] ? 'gradient-primary text-white hover:opacity-95' : 'border border-gray-200 text-gray-700 hover:bg-gray-50' }}">Start Free Trial</a>
+                <a href="{{ route('register') }}" class="mt-8 block w-full text-center px-4 py-2.5 rounded-lg font-medium transition {{ $p->is_featured ? 'gradient-primary text-white hover:opacity-95' : 'border border-gray-200 text-gray-700 hover:bg-gray-50' }}">Start Free Trial</a>
             </div>
             @endforeach
         </div>
@@ -493,7 +516,7 @@
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
         <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
         <h2 class="relative text-4xl font-bold tracking-tight md:text-5xl">Ready to get paid faster?</h2>
-        <p class="relative mx-auto mt-4 max-w-xl opacity-90">Join thousands of businesses streamlining their invoicing with Inveqi.</p>
+        <p class="relative mx-auto mt-4 max-w-xl opacity-90">Join {{ number_format($businessesCount) }} businesses already streamlining their invoicing with Inveqi.</p>
         <div class="relative mt-8 flex flex-wrap justify-center gap-3">
             <a href="{{ route('register') }}" class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition">
                 Start your free trial <i class="fas fa-arrow-right ml-2 text-sm"></i>

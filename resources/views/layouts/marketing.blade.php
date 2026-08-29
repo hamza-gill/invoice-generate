@@ -127,23 +127,6 @@
                     arrow.classList.toggle('rotate-180');
                 });
             });
-
-            const monthlyBtn = document.getElementById('billingMonthly');
-            const yearlyBtn = document.getElementById('billingYearly');
-            if (monthlyBtn && yearlyBtn) {
-                monthlyBtn.addEventListener('click', function() {
-                    document.querySelectorAll('.price-monthly').forEach(el => el.classList.remove('hidden'));
-                    document.querySelectorAll('.price-yearly').forEach(el => el.classList.add('hidden'));
-                    monthlyBtn.className = 'rounded-full px-4 py-1.5 transition gradient-primary text-white shadow-soft';
-                    yearlyBtn.className = 'rounded-full px-4 py-1.5 transition text-gray-500';
-                });
-                yearlyBtn.addEventListener('click', function() {
-                    document.querySelectorAll('.price-monthly').forEach(el => el.classList.add('hidden'));
-                    document.querySelectorAll('.price-yearly').forEach(el => el.classList.remove('hidden'));
-                    yearlyBtn.className = 'rounded-full px-4 py-1.5 transition gradient-primary text-white shadow-soft';
-                    monthlyBtn.className = 'rounded-full px-4 py-1.5 transition text-gray-500';
-                });
-            }
         });
     </script>
 </body>
