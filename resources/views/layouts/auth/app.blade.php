@@ -22,12 +22,19 @@
     </script>
 
     <style>
-        /* ✅ Only one vertical scrollbar */
-        html, body {
-            height: 100%;
+        /* Only ONE element should own vertical scrolling. Applying height:100%
+           + overflow-y:auto to BOTH html and body creates two independent
+           scroll containers once content overflows — html scrolls its box,
+           and body separately scrolls inside it, giving two scrollbars.
+           Body is the sole scroll owner here; html just gets smooth-scroll
+           behavior without becoming its own scroll container. */
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            min-height: 100%;
             overflow-x: hidden;
             overflow-y: auto;
-            scroll-behavior: smooth;
         }
     </style>
 </head>

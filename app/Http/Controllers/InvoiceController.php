@@ -344,23 +344,48 @@ class InvoiceController extends Controller
     {
         $this->authorize('update', $invoice);
         $customers = Customer::latest()->get();
-        return view('invoices.edit', compact('customers','invoice'));
+        $templates = InvoiceTemplate::availableFor(auth()->user()->organization_id)
+            ->orderBy('sort_order')
+            ->get();
+
+        $existingItems = $invoice->items()->with('product')->get()->map(function ($item) {
+            return [
+                'productId'   => $item->product_id,
+                'productName' => $item->product->name ?? $item->activity,
+                'description' => $item->activity,
+                'quantity'    => $item->quantity,
+                'unitPrice'   => $item->amount,
+            ];
+        })->values();
+
+        return view('invoices.edit', compact('customers','invoice','templates','existingItems'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * REPLACE the entire update() method in InvoiceController with this.
+     * It now mirrors store(): first_name/last_name instead of a single "name" field,
+     * phone_number/country, invoice_template_id, discount applied to the total,
+     * and rush delivery fields — all of which the new edit.blade.php form sends.
      */
+
     public function update(Request $request, Invoice $invoice)
     {
         $this->authorize('update', $invoice);
+
         $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email',
             'address' => 'required|string',
             'city' => 'required|string',
-            'customer_id' => 'nullable|integer|exists:customers,id',
+            'state' => 'required|string',
+            'postal_code' => 'required|string',
             'invoice_number' => 'nullable|string',
             'issue_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'discount' => 'nullable|numeric|min:0',
+            'invoice_template_id' => 'nullable|integer|exists:invoice_templates,id',
+            'line_items' => 'required|array|min:1',
             'line_items.*.description' => 'required|string',
             'line_items.*.product_id' => 'required|integer|exists:products,id',
             'line_items.*.quantity' => 'required|numeric|min:1',
@@ -370,68 +395,70 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            $firstName =  null;
-            $lastName =  null;
-            $name  =  $request->input('name');
-            if (!$lastName && isset($name)) {
-                $nameParts = preg_split('/\s+/', trim($name), 2);
-                $firstName = $nameParts[0] ?? null;
-                $lastName  = $nameParts[1] ?? null;
-            }
-            // ✅ Fetch or update customer
+            // Fetch or update customer — mirrors store()'s Customer::updateOrCreate,
+            // and supports the "+ Add New Customer" dropdown option in the blade form.
             $customer = Customer::updateOrCreate(
                 ['email' => $request->input('email')],
                 [
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'address' => $request->input('address'),
+                    'first_name'   => $request->input('first_name'),
+                    'last_name'    => $request->input('last_name'),
                     'company_name' => $request->input('company_name'),
-                    'city' => $request->input('city'),
-                    'country' => 'USA',
+                    'address'      => $request->input('address'),
+                    'city'         => $request->input('city'),
+                    'phone_number' => $request->input('phone_number'),
+                    'country'      => $request->input('country', 'USA'),
+                    'state'        => $request->input('state'),
+                    'postal_code'  => $request->input('postal_code'),
                 ]
             );
 
-            // ✅ Recalculate dates
+            // Recalculate dates
             $issueDate = Carbon::parse($request->input('issue_date'));
             $dueDate = $request->filled('due_date')
                 ? Carbon::parse($request->input('due_date'))
-                : $invoice->due_date ?? $issueDate->copy()->addDays(30);
+                : ($invoice->due_date ?? $issueDate->copy()->addDays(30));
 
-            // ✅ Update main invoice info
+            // Update main invoice info
             $invoice->update([
-                'customer_id' => $customer->id,
-                'invoice_number' => $request->input('invoice_number') ?: $invoice->invoice_number,
-                'description' => $request->input('description') ?? '',
-                'issue_date' => $issueDate,
-                'due_date' => $dueDate,
-                'note' => $request->input('notes') ?? '',
-                'project_address' => $request->input('project_address') ?? '',
-                'status' => $invoice->status, // keep status unless you want to modify
+                'customer_id'         => $customer->id,
+                'invoice_number'      => $request->input('invoice_number') ?: $invoice->invoice_number,
+                'description'         => $request->input('description') ?? '',
+                'issue_date'          => $issueDate,
+                'due_date'            => $dueDate,
+                'note'                => $request->input('notes') ?? '',
+                'project_address'     => $request->input('project_address') ?? '',
+                'discount'            => $request->input('discount', 0),
+                'invoice_template_id' => $request->input('invoice_template_id') ?: null,
+                'enable_rush_addon'   => (bool) $request->input('enable_rush_delivery', false),
+                'status'              => $invoice->status, // keep status unless you want to modify
             ]);
 
-            // ✅ Remove old line items before adding updated ones
+            // Remove old line items before adding updated ones
             $invoice->items()->delete();
 
-            // ✅ Recreate all line items and calculate total
-            $totalAmount = 0;
+            // Recreate all line items and calculate subtotal
+            $subtotal = 0;
             foreach ($request->input('line_items', []) as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price'];
 
                 $invoice->items()->create([
-                    'activity' => $item['description'],
+                    'activity'   => $item['description'],
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'amount' => $item['unit_price'],
-                    'total' => $lineTotal,
+                    'quantity'   => $item['quantity'],
+                    'amount'     => $item['unit_price'],
+                    'total'      => $lineTotal,
                 ]);
 
-                $totalAmount += $lineTotal;
+                $subtotal += $lineTotal;
             }
 
-            // ✅ Update invoice total
-            $invoice->update(['amount' => $totalAmount]);
+            // Apply discount, same as store()
+            $discount = floatval($request->input('discount', 0));
+            $finalAmount = max(0, $subtotal - $discount);
 
-            // ✅ Log activity
+            $invoice->update(['amount' => $finalAmount]);
+
+            // Log activity
             $invoice->logActivity(
                 'updated',
                 "Invoice #{$invoice->invoice_number} updated by " . (auth()->user()->name ?? 'System') . "."
