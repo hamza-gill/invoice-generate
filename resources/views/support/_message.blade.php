@@ -10,6 +10,22 @@
             {{ $senderName }}
         </div>
         <div class="whitespace-pre-wrap break-words">{{ $message->body }}</div>
+        @if($message->attachments && $message->attachments->isNotEmpty())
+            <div class="flex flex-wrap gap-2 mt-2">
+                @foreach($message->attachments as $att)
+                    <a href="{{ route('support.attachments.download', $att) }}" target="_blank"
+                       class="inline-flex items-center gap-2 {{ $isAdmin ? 'bg-gray-100 hover:bg-gray-200 text-gray-800' : 'bg-blue-500/30 hover:bg-blue-500/40 text-white' }} rounded-lg px-2.5 py-1.5 text-xs">
+                        @if($att->isImage())
+                            <i class="fas fa-image"></i>
+                        @else
+                            <i class="fas fa-paperclip"></i>
+                        @endif
+                        <span class="max-w-[160px] truncate">{{ $att->original_name }}</span>
+                        <span class="opacity-70">({{ $att->humanSize() }})</span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
         <span class="text-xs text-gray-400 mt-1 block">{{ $message->created_at->format('M d, g:i A') }}</span>
     </div>
 </div>

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SupportAttachment;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SupportTicketController extends Controller
 {
@@ -29,6 +32,8 @@ class SupportTicketController extends Controller
             'subject' => ['required', 'string', 'max:255'],
             'priority' => ['required', 'in:low,medium,high,urgent'],
             'message' => ['required', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:jpeg,png,jpg,gif,webp,pdf,doc,docx,xls,xlsx,csv,txt,zip,ppt,pptx', 'max:10240'],
         ]);
 
         $ticket = SupportTicket::create([
@@ -40,20 +45,58 @@ class SupportTicketController extends Controller
             'is_read_by_admin' => false,
         ]);
 
-        $ticket->messages()->create([
+        $message = $ticket->messages()->create([
             'sender_type' => 'user',
             'sender_id' => Auth::id(),
             'body' => $request->message,
         ]);
 
+        $this->storeAttachments($request->file('attachments', []), $ticket, $message);
+
         return redirect()->route('support.show', $ticket)
             ->with('success', 'Ticket created. Our team will reply shortly.');
     }
 
+    /**
+     * Persist uploaded files onto a message, returning their metadata.
+     */
+    protected function storeAttachments(array $files, SupportTicket $ticket, SupportMessage $message): array
+    {
+        $attachments = [];
+
+        foreach ($files as $file) {
+            $filename = Str::random(32) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs(
+                "tickets/{$ticket->id}/messages/{$message->id}",
+                $filename,
+                'support'
+            );
+
+            $attachment = $message->attachments()->create([
+                'support_ticket_id' => $ticket->id,
+                'original_name' => $file->getClientOriginalName(),
+                'stored_path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+
+            $attachments[] = [
+                'id' => $attachment->id,
+                'original_name' => $attachment->original_name,
+                'is_image' => $attachment->isImage(),
+                'human_size' => $attachment->humanSize(),
+                'download_url' => route('support.attachments.download', $attachment),
+            ];
+        }
+
+        return $attachments;
+    }
+
+
     public function show(SupportTicket $ticket)
     {
         // Ensure the customer owns this ticket (global org scope applies).
-        $ticket->load('opener', 'messages');
+        $ticket->load('opener', 'messages.attachments');
 
         // Mark the thread as read by the organization.
         $ticket->update(['is_read_by_org' => true]);
@@ -71,6 +114,8 @@ class SupportTicketController extends Controller
     {
         $request->validate([
             'message' => ['required', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:jpeg,png,jpg,gif,webp,pdf,doc,docx,xls,xlsx,csv,txt,zip,ppt,pptx', 'max:10240'],
         ]);
 
         $message = $ticket->messages()->create([
@@ -78,6 +123,8 @@ class SupportTicketController extends Controller
             'sender_id' => Auth::id(),
             'body' => $request->message,
         ]);
+
+        $attachments = $this->storeAttachments($request->file('attachments', []), $ticket, $message);
 
         $ticket->update([
             'last_message_at' => now(),
@@ -91,14 +138,39 @@ class SupportTicketController extends Controller
             'time' => $message->created_at->format('M d, g:i A'),
             'sender' => Auth::user()->first_name ?: Auth::user()->name,
             'is_self' => true,
+            'attachments' => $attachments,
         ]);
+    }
+
+    /**
+     * Download an attachment if the authenticated customer can access its ticket.
+     */
+    public function download(Request $request, SupportAttachment $attachment)
+    {
+        // Re-resolve under the org scope: returns null if the ticket belongs to
+        // another organization, denying cross-tenant access.
+        $ticket = SupportTicket::find($attachment->support_ticket_id);
+
+        if (! $ticket) {
+            abort(404);
+        }
+
+        if (! Storage::disk('support')->exists($attachment->stored_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('support')->download(
+            $attachment->stored_path,
+            $attachment->original_name
+        );
     }
 
     public function poll(Request $request, SupportTicket $ticket)
     {
         $afterId = (int) $request->query('after_id', 0);
 
-        $messages = SupportMessage::where('support_ticket_id', $ticket->id)
+        $messages = SupportMessage::with('attachments')
+            ->where('support_ticket_id', $ticket->id)
             ->where('id', '>', $afterId)
             ->orderBy('id')
             ->get()
@@ -109,6 +181,13 @@ class SupportTicketController extends Controller
                 'sender' => $m->sender_type === 'admin' ? 'Inveqi Support' : ($m->sender()->first_name ?: $m->sender()->name),
                 'is_self' => $m->sender_type === 'user',
                 'is_admin' => $m->sender_type === 'admin',
+                'attachments' => $m->attachments->map(fn ($a) => [
+                    'id' => $a->id,
+                    'original_name' => $a->original_name,
+                    'is_image' => $a->isImage(),
+                    'human_size' => $a->humanSize(),
+                    'download_url' => route('support.attachments.download', $a),
+                ])->values(),
             ]);
 
         // Clear the incoming (admin) unread indicator when the customer is polling.

@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // Shared disk used by both the customer app and the platform admin app.
+        // Both apps must point this at the SAME physical directory so that support
+        // chat attachments uploaded in one app can be downloaded in the other.
+        'support' => [
+            'driver' => 'local',
+            'root' => env('SUPPORT_STORAGE_PATH', storage_path('app/support')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

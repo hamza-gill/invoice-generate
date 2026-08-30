@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportMessage extends Model
 {
@@ -29,5 +30,10 @@ class SupportMessage extends Model
         return $this->sender_type === 'admin'
             ? PlatformAdmin::find($this->sender_id)
             : User::find($this->sender_id);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(SupportAttachment::class, 'support_message_id');
     }
 }

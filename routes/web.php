@@ -269,6 +269,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::get('/support/{ticket}', [SupportTicketController::class, 'show'])->name('support.show');
     Route::post('/support/{ticket}/messages', [SupportTicketController::class, 'sendMessage'])->name('support.messages.store');
     Route::get('/support/{ticket}/messages', [SupportTicketController::class, 'poll'])->name('support.messages.poll');
+    Route::get('/support/attachments/{attachment}/download', [SupportTicketController::class, 'download'])->name('support.attachments.download');
 
 
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
