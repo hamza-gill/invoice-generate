@@ -118,6 +118,18 @@
             <span>Notifications</span>
         </a>
 
+        <!-- Support Tickets - Available to all authenticated users -->
+        @php($supportUnread = \App\Models\SupportTicket::where('status', '!=', 'closed')->where('is_read_by_org', false)->count())
+        <a href="{{ route('support.index') }}"
+           class="flex items-center space-x-3 px-4 py-3 rounded-lg transition
+                  {{ request()->routeIs('support.*') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-sidebar-hover' }}">
+            <i class="fas fa-headset w-5"></i>
+            <span>Support</span>
+            @if($supportUnread > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $supportUnread }}</span>
+            @endif
+        </a>
+
         @if(in_array(auth()->user()->role, ['admin', 'developer', 'manager']))
             <a href="{{ route('templates.index') }}"
                class="flex items-center space-x-3 px-4 py-3 rounded-lg transition

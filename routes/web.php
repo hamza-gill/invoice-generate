@@ -19,6 +19,7 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\UserController;
 use App\Models\Invoice;
@@ -260,6 +261,15 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
+
+    // Support tickets
+    Route::get('/support', [SupportTicketController::class, 'index'])->name('support.index');
+    Route::get('/support/create', [SupportTicketController::class, 'create'])->name('support.create');
+    Route::post('/support', [SupportTicketController::class, 'store'])->name('support.store');
+    Route::get('/support/{ticket}', [SupportTicketController::class, 'show'])->name('support.show');
+    Route::post('/support/{ticket}/messages', [SupportTicketController::class, 'sendMessage'])->name('support.messages.store');
+    Route::get('/support/{ticket}/messages', [SupportTicketController::class, 'poll'])->name('support.messages.poll');
+
 
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings/organization', [SettingController::class, 'updateOrganization'])->name('settings.organization.update');
