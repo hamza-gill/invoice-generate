@@ -39,11 +39,15 @@ class Invoice extends Model
         'custom_fields',
         'recurring_invoice_id',
         'estimate_id',
+        'reminder_level',
+        'last_reminder_sent_at',
     ];
 
     protected $casts = [
         'gateway_response' => 'array',
         'custom_fields' => 'array',
+        'reminder_level' => 'integer',
+        'last_reminder_sent_at' => 'datetime',
     ];
 
     public function getTotalWithRushAttribute()

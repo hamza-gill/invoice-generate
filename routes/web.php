@@ -278,6 +278,7 @@ Route::middleware(['auth', 'tenant', 'subscription'])->group(function () {
     Route::post('/settings/mail', [SettingController::class, 'updateMail'])->name('settings.mail.update');
     Route::post('/settings/mail/test', [SettingController::class, 'sendTestMail'])->name('settings.mail.test');
     Route::post('/settings/invoice', [SettingController::class, 'updateInvoice'])->name('settings.invoice.update');
+    Route::post('/settings/reminders', [SettingController::class, 'updateReminder'])->name('settings.reminder.update');
     Route::post('/settings/payment-gateway', [SettingController::class, 'togglePaymentGateway'])->name('settings.payment-gateway.toggle');
 
     Route::get('/help', function () {

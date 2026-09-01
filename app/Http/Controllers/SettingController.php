@@ -6,6 +6,7 @@ use App\Http\Requests\Setting\UpdateIntegrationRequest;
 use App\Http\Requests\Setting\UpdateInvoiceRequest;
 use App\Http\Requests\Setting\UpdateMailRequest;
 use App\Http\Requests\Setting\UpdateOrganizationRequest;
+use App\Http\Requests\Setting\UpdateReminderRequest;
 use App\Http\Requests\Setting\UpdatePasswordRequest;
 use App\Models\Setting;
 use App\Models\WebhookSetting;
@@ -299,5 +300,14 @@ class SettingController extends Controller
         $setting->save();
 
         return back()->with('success', 'Payment gateway setting updated.');
+    }
+
+    public function updateReminder(UpdateReminderRequest $request)
+    {
+        $this->authorize('updateReminder', \App\Models\Setting::class);
+
+        $request->persist();
+
+        return back()->with('success', 'Invoice reminder settings updated successfully.');
     }
 }

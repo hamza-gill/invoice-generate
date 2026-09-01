@@ -40,6 +40,14 @@ class SettingPolicy
     }
 
     /**
+     * Determine if the user can update reminder settings.
+     */
+    public function updateReminder(User $user)
+    {
+        return in_array($user->role, ['admin', 'developer']);
+    }
+
+    /**
      * Determine if the user can update password (users can always update their own password)
      */
     public function updatePassword(User $user)

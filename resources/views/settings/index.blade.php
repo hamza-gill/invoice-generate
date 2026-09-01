@@ -64,6 +64,11 @@
                             <i class="fas fa-file-invoice-dollar mr-3"></i> Invoice Configuration
                         </button>
 
+                        <button id="tab-reminder"
+                                class="tab-btn flex items-center px-6 py-3 text-left text-gray-600 hover:bg-gray-100 hover:text-blue-600 border-l-4 border-transparent">
+                            <i class="fas fa-bell mr-3"></i> Reminders
+                        </button>
+
                         @can('view', App\Models\WebhookSetting::class)
                             <button id="tab-webhook"
                                     class="tab-btn flex items-center px-6 py-3 text-left text-gray-600 hover:bg-gray-100 hover:text-blue-600 border-l-4 border-transparent">
@@ -723,6 +728,84 @@
                         </div>
                     @endcan
 
+                    {{-- 🔔 Reminder Settings --}}
+                    <div id="tab-content-reminder" class="hidden">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Invoice Payment Reminders</h2>
+
+                        @cannot('updateReminder', $setting)
+                            <div class="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+                                <i class="fas fa-info-circle mr-2"></i> You have read-only access to these settings.
+                            </div>
+                        @endcan
+
+                        <div class="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Automatically email your customers when an invoice becomes overdue. Set the number of days
+                            after the due date at which an escalating reminder should be sent (e.g. 1, 7, 14 days).
+                            Each reminder is sent only once per invoice.
+                        </div>
+
+                        <form method="POST" action="{{ route('settings.reminder.update') }}" class="space-y-6" id="reminder-form">
+                            @csrf
+
+                            @php
+                                $reminderEnabled = (bool) ($setting->enable_invoice_reminders ?? false);
+                                $reminderSteps = method_exists($setting, 'reminderSteps') ? $setting->reminderSteps() : [1, 7, 14];
+                            @endphp
+
+                            <div class="flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-800">Enable Automatic Reminders</h3>
+                                    <p class="text-sm text-gray-500">Send overdue invoice reminders to your customers.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="enable_invoice_reminders" id="enable_reminders_input" value="1"
+                                           class="sr-only peer"
+                                        {{ $reminderEnabled ? 'checked' : '' }}
+                                        {{ !Gate::allows('updateReminder', $setting) ? 'disabled' : '' }}>
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-all"></div>
+                                    <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md peer-checked:translate-x-5 transition-transform"></div>
+                                </label>
+                            </div>
+
+                            <div id="reminder-steps-wrapper" class="{{ $reminderEnabled ? '' : 'opacity-40 pointer-events-none' }}">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-3">Escalation Steps (days after due date)</h3>
+                                <p class="text-sm text-gray-500 mb-4">
+                                    Each row is a reminder sent that many days after the invoice becomes overdue.
+                                    The customer is only emailed once per step.
+                                </p>
+
+                                <div id="reminder-steps" class="space-y-3">
+                                    @foreach ($reminderSteps as $index => $days)
+                                        <div class="flex items-center gap-3 reminder-step-row">
+                                            <input type="number" name="reminder_days[]" min="1" max="365"
+                                                   value="{{ $days }}"
+                                                   class="w-40 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                                                {{ !Gate::allows('updateReminder', $setting) ? 'disabled' : '' }}>
+                                            <span class="text-sm text-gray-500">day(s) after due date</span>
+                                            <button type="button" class="text-red-500 hover:text-red-700 remove-reminder-step" title="Remove step" {{ !Gate::allows('updateReminder', $setting) ? 'disabled' : '' }}>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <button type="button" id="add-reminder-step"
+                                        class="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                    {{ !Gate::allows('updateReminder', $setting) ? 'disabled' : '' }}>
+                                    <i class="fas fa-plus mr-1"></i> Add escalation step
+                                </button>
+                            </div>
+
+                            @can('updateReminder', $setting)
+                                <button type="submit"
+                                        class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition-all">
+                                    Save Reminder Settings
+                                </button>
+                            @endcan
+                        </form>
+                    </div>
+
                     {{-- 🛡 Security Settings --}}
                     <div id="tab-content-security" class="hidden">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-6">Security</h2>
@@ -870,12 +953,14 @@
             int: document.getElementById('tab-int'),
             mail: document.getElementById('tab-mail'),
             invoice: document.getElementById('tab-invoice'),
+            reminder: document.getElementById('tab-reminder'),
             sec: document.getElementById('tab-security'),
             webhook: document.getElementById('tab-webhook'),
             contentOrg: document.getElementById('tab-content-org'),
             contentInt: document.getElementById('tab-content-int'),
             contentMail: document.getElementById('tab-content-mail'),
             contentInvoice: document.getElementById('tab-content-invoice'),
+            contentReminder: document.getElementById('tab-content-reminder'),
             contentWebhook: document.getElementById('tab-content-webhooks'),
             contentSecurity: document.getElementById('tab-content-security'),
         };
@@ -900,6 +985,7 @@
             { key: 'int', btn: tabs.int, content: tabs.contentInt },
             { key: 'mail', btn: tabs.mail, content: tabs.contentMail },
             { key: 'invoice', btn: tabs.invoice, content: tabs.contentInvoice },
+            { key: 'reminder', btn: tabs.reminder, content: tabs.contentReminder },
             { key: 'webhook', btn: tabs.webhook, content: tabs.contentWebhook },
             { key: 'security', btn: tabs.sec, content: tabs.contentSecurity },
         ];
@@ -950,5 +1036,39 @@
 
         mailProviderSelect?.addEventListener('change', applyMailProviderFields);
         applyMailProviderFields();
+
+        // Reminder settings: toggle steps and add/remove rows
+        const reminderToggle = document.getElementById('enable_reminders_input');
+        const reminderStepsWrapper = document.getElementById('reminder-steps-wrapper');
+
+        function syncReminderSteps() {
+            if (reminderStepsWrapper) {
+                const enabled = reminderToggle?.checked ?? false;
+                reminderStepsWrapper.classList.toggle('opacity-40', !enabled);
+                reminderStepsWrapper.classList.toggle('pointer-events-none', !enabled);
+            }
+        }
+
+        reminderToggle?.addEventListener('change', syncReminderSteps);
+
+        document.getElementById('add-reminder-step')?.addEventListener('click', function () {
+            const container = document.getElementById('reminder-steps');
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3 reminder-step-row';
+            row.innerHTML =
+                '<input type="number" name="reminder_days[]" min="1" max="365" value="7" ' +
+                'class="w-40 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500">' +
+                '<span class="text-sm text-gray-500">day(s) after due date</span>' +
+                '<button type="button" class="text-red-500 hover:text-red-700 remove-reminder-step" title="Remove step"><i class="fas fa-trash"></i></button>';
+            container.appendChild(row);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.remove-reminder-step')) {
+                e.target.closest('.reminder-step-row')?.remove();
+            }
+        });
+
+        syncReminderSteps();
     </script>
 @endsection

@@ -48,6 +48,8 @@ class Setting extends Model
         'mail_encryption',
         'mail_from_address',
         'mail_from_name',
+        'enable_invoice_reminders',
+        'reminder_schedule',
     ];
 
     protected $casts = [
@@ -59,6 +61,8 @@ class Setting extends Model
         'enable_rush_delivery' => 'boolean',
         'payment_gateway_enabled' => 'boolean',
         'rush_delivery_options' => 'array',
+        'enable_invoice_reminders' => 'boolean',
+        'reminder_schedule' => 'array',
         'tax_percentage' => 'decimal:2',
     ];
 
@@ -201,5 +205,45 @@ class Setting extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Default escalating reminder schedule (days after the due date).
+     *
+     * @return array<int, int>
+     */
+    public static function defaultReminderSchedule(): array
+    {
+        return [1, 7, 14];
+    }
+
+    /**
+     * Normalised reminder schedule as an ascending list of "days after due".
+     *
+     * @return array<int, int>
+     */
+    public function reminderSteps(): array
+    {
+        $steps = $this->reminder_schedule;
+
+        if (! is_array($steps) || empty($steps)) {
+            return array_values(array_unique(static::defaultReminderSchedule()));
+        }
+
+        $days = [];
+
+        foreach ($steps as $step) {
+            if (is_array($step) && isset($step['days'])) {
+                $days[] = (int) $step['days'];
+            } elseif (is_numeric($step)) {
+                $days[] = (int) $step;
+            }
+        }
+
+        $days = array_filter($days, fn ($d) => $d > 0);
+        $days = array_values(array_unique($days));
+        sort($days);
+
+        return $days ?: array_values(static::defaultReminderSchedule());
     }
 }
